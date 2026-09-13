@@ -7,14 +7,65 @@ export default function PredictionEngine() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  // Live FastAPI Stream fetching
+  // Live FastAPI Stream fetching from localhost:8001
   useEffect(() => {
     const fetchScene = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/demo-stream/${activeSceneId}`);
+        const hopsPayload = [];
+        if (activeSceneId === 'scene_2' || activeSceneId === 'scene_3') {
+          hopsPayload.push({
+            hop_id: 'HOP_1',
+            event_time: '2025-06-01T10:05:00',
+            available_time: '2025-06-01T10:10:00',
+            amount: 180000.0,
+            destination_account: 'ACC_7821'
+          });
+        }
+        if (activeSceneId === 'scene_3') {
+          hopsPayload.push({
+            hop_id: 'HOP_2',
+            event_time: '2025-06-01T10:11:00',
+            available_time: '2025-06-01T10:14:00',
+            amount: 150000.0,
+            destination_account: 'ACC_3294'
+          });
+        }
+
+        const res = await fetch(`http://localhost:8001/api/v1/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            case_id: 'NCRP-26-81942',
+            prediction_time: '2025-06-01T10:15:00',
+            sla_minutes: 45.0,
+            complaint: {
+              complaint_id: 'NCRP-26-81942',
+              incident_time: '2025-06-01T10:00:00',
+              available_time: '2025-06-01T10:05:00',
+              amount_inr: 480000.0,
+              typology_id: 'TYP_INVESTMENT'
+            },
+            hops: hopsPayload
+          })
+        });
+
         if (res.ok) {
           const data = await res.json();
-          setSceneData(data);
+          const geo = data.geographic || {};
+          const timing = data.timing || {};
+          const dec = data.decision || {};
+          const dist = timing.intervention_distribution || {};
+
+          const topZone = geo.ranked_zones?.[0]?.district || geo.predicted_destination_zone || 'Gurugram';
+          const p50 = dist.p50_minutes ? Math.round(dist.p50_minutes) : 40;
+
+          setSceneData({
+            title: `Predicted Zone: ${topZone}`,
+            confidence: `${Math.round(dec.decision_confidence || 85)}% (${dec.priority || 'HIGH'})`,
+            heatmap_radius_km: activeSceneId === 'scene_1' ? '25.0' : (activeSceneId === 'scene_2' ? '10.0' : '1.2'),
+            recoverability_status: `P50 Window ~${p50} min — Status: ${dec.priority || 'HIGH'} (Action: ${dec.recommended_action || 'Review'})`,
+            raw_backend: data
+          });
         }
       } catch (err) {
         // Fallback for offline local state

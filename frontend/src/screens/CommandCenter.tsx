@@ -4,10 +4,8 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { Card, Button, SparkleIcon, FeatureTag, SectionLabel } from '../components/ui';
-import { PRIORITY_CASES } from '../data/mockCases';
-import { getCommandCenterKPIs } from '../services/prototypeService';
-
-const kpis = getCommandCenterKPIs();
+import { useCaseContext, getZoneLabel, priorityColor, CASE_FIXTURES } from '../context/CaseContext';
+import { formatAmountInr } from '../data/caseFixtures';
 
 const trendData = [
   { h: '00:00', risk: 22 }, { h: '02:00', risk: 18 }, { h: '04:00', risk: 20 },
@@ -66,9 +64,28 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export default function CommandCenter({ onOpenCase }: { onOpenCase?: () => void }) {
+export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: string) => void }) {
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>('gurugram');
   const selected = hotspots.find(h => h.id === selectedHotspot);
+  const { getFinalPrediction, isLoadingFinal, CASE_FIXTURES: _, caseFixtures } = useCaseContext();
+
+  // Derive KPIs from real backend predictions
+  const loadedPredictions = caseFixtures.map(f => getFinalPrediction(f.case_id)).filter(Boolean);
+  const criticalCount = loadedPredictions.filter(p => p!.decision.priority === 'CRITICAL').length;
+  const highCount = loadedPredictions.filter(p => p!.decision.priority === 'HIGH').length;
+  const priorityInterventions = criticalCount + highCount;
+  const totalAtRisk = loadedPredictions.reduce((sum, p) => sum + (p!.financial_exposure.amount_at_risk_inr || 0), 0);
+
+  // Priority cases sorted by urgency (P50 asc)
+  const priorityCasesSorted = caseFixtures
+    .map(f => ({ fixture: f, pred: getFinalPrediction(f.case_id) }))
+    .filter(({ pred }) => pred && (pred.decision.priority === 'CRITICAL' || pred.decision.priority === 'HIGH'))
+    .sort((a, b) => {
+      const p50a = a.pred!.timing.intervention_distribution.p50_minutes;
+      const p50b = b.pred!.timing.intervention_distribution.p50_minutes;
+      return p50a - p50b;
+    })
+    .slice(0, 4);
 
   return (
     <div className="p-7 space-y-7">
@@ -90,35 +107,35 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: () => void 
         </div>
       </div>
 
-      {/* Section 1: Core KPIs */}
+      {/* Section 1: Core KPIs — derived from real backend predictions */}
       <section>
         <SectionLabel type="sih">Core Metrics</SectionLabel>
         <div className="grid grid-cols-4 gap-4">
           <MetricCard
             title="Active Cases"
-            value={kpis.activeCases.toLocaleString()}
-            delta="+8.4% today"
+            value={String(caseFixtures.filter(f => f.status === 'Active').length)}
+            delta={`${caseFixtures.length} prototype cases loaded`}
             iconColor="#E5484D"
             icon={<CasesIcon />}
           />
           <MetricCard
             title="Amount at Risk"
-            value={kpis.amountAtRisk}
-            delta="Across active cases"
+            value={loadedPredictions.length > 0 ? formatAmountInr(totalAtRisk) : '—'}
+            delta={loadedPredictions.length > 0 ? 'Across loaded cases' : 'Loading…'}
             iconColor="#E5484D"
             icon={<RupeeIcon />}
           />
           <MetricCard
-            title="High-Risk Zones"
-            value={String(kpis.highRiskZones)}
-            delta="6 newly detected"
-            iconColor="#F97316"
+            title="CRITICAL Priority"
+            value={loadedPredictions.length > 0 ? String(criticalCount) : '—'}
+            delta={loadedPredictions.length > 0 ? 'Auto-alert recommended' : 'Loading…'}
+            iconColor="#E5484D"
             icon={<ZoneIcon />}
           />
           <MetricCard
             title="Priority Interventions"
-            value={String(kpis.priorityInterventions)}
-            delta="Require action now"
+            value={loadedPredictions.length > 0 ? String(priorityInterventions) : '—'}
+            delta={loadedPredictions.length > 0 ? 'HIGH or CRITICAL' : 'Loading…'}
             iconColor="#F59E0B"
             icon={<AlertIcon />}
           />
@@ -233,36 +250,48 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: () => void 
             </div>
           </Card>
 
-          {/* Priority Cases */}
+          {/* Priority Interventions — LIVE from backend */}
           <Card className="flex flex-col">
             <div className="px-5 py-4 border-b border-[#F1F5F9]">
               <div className="flex items-center justify-between mb-0.5">
                 <span className="font-semibold text-[#0F172A] text-sm">Priority Interventions</span>
                 <FeatureTag type="sih" />
               </div>
-              <p className="text-xs text-[#94A3B8] mt-1">Sorted by cash-out probability</p>
+              <p className="text-xs text-[#94A3B8] mt-1">Sorted by P50 urgency · LIVE backend</p>
             </div>
             <div className="flex-1 p-3 space-y-2 overflow-y-auto">
-              {PRIORITY_CASES.map(c => (
-                <div
-                  key={c.id}
-                  onClick={onOpenCase}
-                  className="p-3.5 rounded-xl border cursor-pointer hover:border-[#14B8A6]/30 hover:bg-[#F7FFFE] transition-all group"
-                  style={{ borderColor: c.level === 'critical' ? 'rgba(229,72,77,0.2)' : '#E8ECF0' }}
-                >
-                  <div className="flex items-start justify-between mb-1.5">
-                    <span className="font-mono text-xs font-bold text-[#0F172A] group-hover:text-[#14B8A6] transition-colors">{c.id}</span>
-                    <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-md ${
-                      c.level === 'critical' ? 'risk-critical' : c.level === 'high' ? 'risk-high' : 'risk-medium'
-                    }`}>{c.prob}%</span>
-                  </div>
-                  <div className="text-xs text-[#64748B]">{c.amount} · {c.zone}</div>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#94A3B8" strokeWidth="1.1"/><path d="M5 2.5V5L6.5 6.5" stroke="#94A3B8" strokeWidth="1.1" strokeLinecap="round"/></svg>
-                    <span className="text-[10px] text-[#94A3B8]">Window: {c.mins} min</span>
-                  </div>
+              {priorityCasesSorted.length === 0 && (
+                <div className="flex items-center justify-center h-24 text-xs text-[#94A3B8]">
+                  {isLoadingFinal(caseFixtures[0]?.case_id) ? 'Loading predictions…' : 'No HIGH/CRITICAL cases'}
                 </div>
-              ))}
+              )}
+              {priorityCasesSorted.map(({ fixture, pred }) => {
+                const p50 = Math.round(pred!.timing.intervention_distribution.p50_minutes);
+                const priority = pred!.decision.priority;
+                const atRisk = pred!.financial_exposure.amount_at_risk_inr;
+                const zone = getZoneLabel(pred!.geographic.predicted_destination_zone);
+                const color = priorityColor(priority);
+                return (
+                  <div
+                    key={fixture.case_id}
+                    onClick={() => onOpenCase?.(fixture.case_id)}
+                    className="p-3.5 rounded-xl border cursor-pointer hover:border-[#14B8A6]/30 hover:bg-[#F7FFFE] transition-all group"
+                    style={{ borderColor: `${color}33` }}
+                  >
+                    <div className="flex items-start justify-between mb-1.5">
+                      <span className="font-mono text-xs font-bold text-[#0F172A] group-hover:text-[#14B8A6] transition-colors">{fixture.case_id}</span>
+                      <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-md" style={{ color, background: `${color}15` }}>
+                        {priority}
+                      </span>
+                    </div>
+                    <div className="text-xs text-[#64748B]">{formatAmountInr(atRisk)} at risk · {zone}</div>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#94A3B8" strokeWidth="1.1"/><path d="M5 2.5V5L6.5 6.5" stroke="#94A3B8" strokeWidth="1.1" strokeLinecap="round"/></svg>
+                      <span className="text-[10px] text-[#94A3B8]">P50 window: {p50} min</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <div className="p-3 border-t border-[#F1F5F9]">
               <button className="w-full py-2 text-sm font-medium text-[#14B8A6] border border-[#14B8A6]/20 rounded-xl hover:bg-[#14B8A6]/5 transition-colors">

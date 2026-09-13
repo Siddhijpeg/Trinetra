@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip,
 } from 'recharts';
 import { Card, RiskBadge, Button, SparkleIcon, FeatureTag, PrototypeBadge, ConfidenceBar, TimelineEvent } from '../components/ui';
 import { DEMO_CASE_HOPS, DEMO_CASE_ACCOUNTS, DEMO_CASE_TIMELINE } from '../data/mockCases';
 import { PREDICTION_EVOLUTION_STEPS, PREDICTION_DECISION, EXPLAINABILITY_FACTORS } from '../data/mockPredictions';
-import type { OutcomeType, PredictionStage } from '../types';
+import { fetchPredictionFromAPI } from '../services/prototypeService';
+import type { OutcomeType, PredictionStage, CasePrediction } from '../types';
 
 // ─── Confidence level label helper ───────────────────────────────────────────
 const confidenceLabel = (c: number) =>
@@ -31,9 +32,57 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
   const [selectedOutcome, setSelectedOutcome] = useState<OutcomeType | null>(null);
   const [outcomeSubmitted, setOutcomeSubmitted] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [livePrediction, setLivePrediction] = useState<CasePrediction | null>(null);
+  const [apiLoading, setApiLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  const currentStep = PREDICTION_EVOLUTION_STEPS[predStage];
-  const decision = PREDICTION_DECISION;
+  useEffect(() => {
+    const loadLivePrediction = async () => {
+      setApiLoading(true);
+      setApiError(null);
+      try {
+        const pred = await fetchPredictionFromAPI({
+          case_id: 'NCRP-26-81942',
+          prediction_time: '2025-06-01T10:15:00',
+          sla_minutes: 45.0,
+          complaint: {
+            complaint_id: 'NCRP-26-81942',
+            incident_time: '2025-06-01T10:00:00',
+            available_time: '2025-06-01T10:05:00',
+            amount_inr: 480000.0,
+            typology_id: 'TYP_INVESTMENT'
+          },
+          hops: [
+            {
+              hop_id: 'HOP_1',
+              event_time: '2025-06-01T10:05:00',
+              available_time: '2025-06-01T10:10:00',
+              amount: 180000.0,
+              destination_account: 'ACC_7821'
+            },
+            {
+              hop_id: 'HOP_2',
+              event_time: '2025-06-01T10:11:00',
+              available_time: '2025-06-01T10:14:00',
+              amount: 150000.0,
+              destination_account: 'ACC_3294'
+            }
+          ]
+        });
+        setLivePrediction(pred);
+      } catch (e: any) {
+        setApiError(e.message || 'API Unavailable');
+      } finally {
+        setApiLoading(false);
+      }
+    };
+    loadLivePrediction();
+  }, []);
+
+  const stepsToUse = livePrediction?.evolutionSteps || PREDICTION_EVOLUTION_STEPS;
+  const currentStep = stepsToUse[Math.min(predStage, stepsToUse.length - 1)] || PREDICTION_EVOLUTION_STEPS[0];
+  const decision = livePrediction?.decision || PREDICTION_DECISION;
+  const factorsToUse = livePrediction?.explainabilityFactors || EXPLAINABILITY_FACTORS;
 
   const handleNextHop = () => {
     if (predStage < 3) setPredStage((s) => (s + 1) as PredictionStage);
@@ -304,7 +353,7 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                 </button>
                 {xaiOpen && (
                   <div className="space-y-1.5 fade-in">
-                    {EXPLAINABILITY_FACTORS.map((f, i) => (
+                    {factorsToUse.map((f, i) => (
                       <ConfidenceBar key={i} label={f.label} value={f.weight} color={f.color} />
                     ))}
                   </div>

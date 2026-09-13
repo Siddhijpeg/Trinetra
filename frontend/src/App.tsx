@@ -14,20 +14,21 @@ import PredictionEngine from './screens/PredictionEngine';
 import DataSources from './screens/DataSources';
 import Reports from './screens/Reports';
 import AuditLogs from './screens/AuditLogs';
+import { CaseProvider, useCaseContext } from './context/CaseContext';
 
 const breadcrumbMap: Record<string, string> = {
-  command:      'Command Center',
-  cases:        'Cases',
-  'case-detail':'Cases / NCRP-26-81942',
-  prediction:   'Prediction Engine',
-  geo:          'Geo Intelligence',
+  command:         'Command Center',
+  cases:           'Cases',
+  'case-detail':   'Cases / Active Investigation',
+  prediction:      'Prediction Engine',
+  geo:             'Geo Intelligence',
   'fraud-network': 'Fraud Network',
-  osint:        'OSINT Intelligence',
-  alerts:       'Alert Center',
-  copilot:      'AI Copilot',
-  reports:      'Reports',
-  datasources:  'Data Sources',
-  audit:        'Security & Audit',
+  osint:           'OSINT Intelligence',
+  alerts:          'Alert Center',
+  copilot:         'AI Copilot',
+  reports:         'Reports',
+  datasources:     'Data Sources',
+  audit:           'Security & Audit',
 };
 
 interface AuthState {
@@ -36,27 +37,24 @@ interface AuthState {
   officerId: string;
 }
 
-export default function App() {
-  const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, role: '', officerId: '' });
+// Inner component so it can use useCaseContext
+function AppInner({ auth }: { auth: AuthState }) {
   const [activeScreen, setActiveScreen] = useState('command');
+  const { setActiveCase, activeCaseId } = useCaseContext();
 
   const navigate = (screen: string) => setActiveScreen(screen);
 
-  const handleLogin = (role: string, officerId: string) => {
-    setAuth({ isLoggedIn: true, role, officerId });
+  const openCase = (caseId?: string) => {
+    if (caseId) setActiveCase(caseId);
+    navigate('case-detail');
   };
-
-  // Not logged in → show Login screen
-  if (!auth.isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
-  }
 
   const renderScreen = () => {
     switch (activeScreen) {
       case 'command':
-        return <CommandCenter onOpenCase={() => navigate('case-detail')} />;
+        return <CommandCenter onOpenCase={openCase} />;
       case 'cases':
-        return <Cases onOpenCase={() => navigate('case-detail')} />;
+        return <Cases onOpenCase={openCase} />;
       case 'case-detail':
         return <CaseWorkspace onBack={() => navigate('cases')} />;
       case 'prediction':
@@ -68,9 +66,9 @@ export default function App() {
       case 'osint':
         return <OSINTIntelligence />;
       case 'alerts':
-        return <AlertCenter onOpenCase={() => navigate('case-detail')} />;
+        return <AlertCenter onOpenCase={openCase} />;
       case 'copilot':
-        return <AICopilot onOpenCase={() => navigate('case-detail')} />;
+        return <AICopilot onOpenCase={() => openCase()} />;
       case 'reports':
         return <Reports />;
       case 'datasources':
@@ -98,31 +96,46 @@ export default function App() {
   };
 
   const isCopilot = activeScreen === 'copilot';
+  const crumb = activeScreen === 'case-detail'
+    ? `Cases / ${activeCaseId}`
+    : breadcrumbMap[activeScreen];
 
   return (
     <div className="flex h-full overflow-hidden bg-[#F7F8FA]">
-      {/* Sidebar */}
       <Sidebar
         active={activeScreen === 'case-detail' ? 'cases' : activeScreen}
         onNavigate={navigate}
         officerId={auth.officerId}
         role={auth.role}
       />
-
-      {/* Main Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
         <TopBar
-          breadcrumb={breadcrumbMap[activeScreen]}
+          breadcrumb={crumb}
           onCopilotOpen={() => navigate('copilot')}
           officerId={auth.officerId}
         />
-
-        {/* Screen Content */}
         <main className={`flex-1 overflow-auto ${isCopilot ? 'overflow-hidden flex flex-col' : ''}`}>
           {renderScreen()}
         </main>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, role: '', officerId: '' });
+
+  const handleLogin = (role: string, officerId: string) => {
+    setAuth({ isLoggedIn: true, role, officerId });
+  };
+
+  if (!auth.isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  return (
+    <CaseProvider>
+      <AppInner auth={auth} />
+    </CaseProvider>
   );
 }
