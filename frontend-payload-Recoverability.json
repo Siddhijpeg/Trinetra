@@ -1,0 +1,44 @@
+{
+  "caseId": "CMP-88219-TEST",
+  "predictionStage": "HOP_3",
+  "operationalTrigger": "BANK_FLAG_HIGH_RISK_TX",
+  "predictionTimestamp": "2026-09-13T10:45:00Z",
+  "modelVersion": "R2_XGBoost_Registry_Aware",
+  "locationConfidence": 0.82,
+  "topZones": [
+    {
+      "zoneId": "Z-42 (Gurugram West)",
+      "confidence": 0.82
+    }
+  ],
+  "registrySignals": [
+    {
+      "accountIdMasked": "XXXX8231",
+      "historicalSightings": 14,
+      "registryReliability": 0.68
+    }
+  ],
+  "recoverability": {
+    "estimatedRemainingMinutes": 28,
+    "survivalQuantiles": {
+      "P25": 12,
+      "Median": 28,
+      "P75": 61
+    },
+    "survivalProbabilities": {
+      "P_greater_than_15m": 0.72,
+      "P_greater_than_30m": 0.48,
+      "P_greater_than_60m": 0.25
+    },
+    "score": 68,
+    "band": "MODERATE"
+  },
+  "urgency": "ACT_NOW",
+  "amountAtRisk": 150000.00,
+  "explanations": [
+    {
+      "type": "TIMING_ESTIMATE",
+      "message": "Cash-out is estimated within approximately 28 minutes. 75% probability remains that the funds will not be cashed out in the next 12 minutes."
+    }
+  ]
+}

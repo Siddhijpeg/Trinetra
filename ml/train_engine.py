@@ -82,14 +82,41 @@ for z in zone_list:
     }
 
 # --- MODEL 4: Network Enrichment (Risk Registry) ---
-print("\n[Model 4] Generating Node Risk Registry...")
+print("\n[Model 4] Generating Node Risk Registry (M4 Baseline)...")
 node_risk_registry = {}
 for acc in h_full['to_account'].unique():
     acc_hops = h_full[h_full['to_account'] == acc]
-    # Simple risk score: frequency in training set
     node_risk_registry[acc] = {
         "historical_count": len(acc_hops),
         "risk_weight": min(2.0, 1.0 + (len(acc_hops) * 0.1))
+    }
+
+print("\n[Registry Optimization] Generating Rich Registry Artifact...")
+rich_registry = {}
+for acc in h_full['to_account'].unique():
+    acc_hops = h_full[h_full['to_account'] == acc]
+    # Zone counts
+    z_counts = acc_hops['zone_id'].value_counts()
+    z_dist = z_counts.to_dict()
+    total_sightings = len(acc_hops)
+    
+    top_z = z_counts.idxmax()
+    raw_conc = z_counts.max() / total_sightings
+    
+    # Entropy
+    probs = np.array(list(z_dist.values())) / total_sightings
+    h = -np.sum(probs * np.log(probs + 1e-12))
+    norm_h = h / np.log(len(zone_list)) if len(zone_list) > 1 else 0.0
+    
+    rich_registry[acc] = {
+        "account_id": acc,
+        "historical_sightings": total_sightings,
+        "zone_counts": z_dist,
+        "top_zone": top_z,
+        "raw_concentration": float(raw_conc),
+        "normalized_entropy": float(norm_h),
+        "first_seen": str(acc_hops['event_timestamp'].min()),
+        "last_seen": str(acc_hops['event_timestamp'].max())
     }
 
 # --- SAVE ARTIFACTS ---
@@ -106,10 +133,12 @@ trained_artifacts = {
     "xgb_features": features
 }
 
-os.makedirs("ml", exist_ok=True)
-with open("ml/trained_model.json", "w") as f:
+with open("trained_model.json", "w") as f:
     json.dump(trained_artifacts, f, indent=2)
 
-xgb_model.save_model("ml/xgboost_model.json")
+with open("rich_registry.json", "w") as f:
+    json.dump(rich_registry, f, indent=2)
+
+xgb_model.save_model("xgboost_model.json")
 
 print("\n  [OK] ALL MODELS TRAINED AND SAVED SAFELY WITHOUT LEAKAGE.")

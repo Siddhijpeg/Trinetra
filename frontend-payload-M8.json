@@ -1,0 +1,44 @@
+{
+  "caseId": "CMP-88219-TEST",
+  "stage": "HOP_3",
+  "modelVersion": "M8_Reliability_Aware",
+  "rankedZones": [
+    {
+      "zoneId": "Z-42 (Gurugram West)",
+      "calibratedConfidence": 0.82
+    },
+    {
+      "zoneId": "Z-14 (Delhi East)",
+      "calibratedConfidence": 0.11
+    },
+    {
+      "zoneId": "Z-55 (Noida Central)",
+      "calibratedConfidence": 0.04
+    }
+  ],
+  "predictionHistory": {
+    "T0": {"zoneId": "Z-14", "confidence": 0.12},
+    "HOP_1": {"zoneId": "Z-42", "confidence": 0.28},
+    "HOP_2": {"zoneId": "Z-42", "confidence": 0.41},
+    "HOP_3": {"zoneId": "Z-42", "confidence": 0.82}
+  },
+  "registrySignals": [
+    {
+      "accountIdMasked": "XXXX8231",
+      "historicalSightings": 14,
+      "topHistoricalZone": "Z-42 (Gurugram West)",
+      "zoneConcentration": 0.71,
+      "normalizedEntropy": 0.34,
+      "registryReliability": 0.68,
+      "rankBeforeRegistry": 4,
+      "rankAfterRegistry": 1,
+      "probabilityBeforeRegistry": 0.14,
+      "probabilityAfterRegistry": 0.82,
+      "lastSeen": "2025-04-18T14:22:10Z"
+    }
+  ],
+  "recoverability": {
+    "status": "NOT_EVALUATED_YET"
+  },
+  "recommendedAction": "DEPLOY_INTERVENTION_GURUGRAM_WEST"
+}
