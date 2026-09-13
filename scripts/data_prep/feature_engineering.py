@@ -41,7 +41,7 @@ def build_hop_features(hops_df, complaints_df, accounts_df, as_of_time_col='avai
     
     return h_c
 
-def get_engineered_data(split_prefix="train", data_dir="../../data/generated/splits"):
+def get_engineered_data(split_prefix="train", data_dir="../../data/synthetic/splits"):
     """Loads a split and returns the engineered DataFrames."""
     import os
     cmps = pd.read_csv(os.path.join(data_dir, f"{split_prefix}_complaints.csv"))

@@ -5,10 +5,10 @@ import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, brier_score_loss
 
 print("Loading dataset...")
-train = pd.read_csv("recoverability_train.csv")
-val = pd.read_csv("recoverability_val.csv")
-test = pd.read_csv("recoverability_test.csv")
-with open("recoverability_features.json", "r") as f:
+train = pd.read_csv("../../artifacts/metrics/recoverability_train.csv")
+val = pd.read_csv("../../artifacts/metrics/recoverability_val.csv")
+test = pd.read_csv("../../artifacts/metrics/recoverability_test.csv")
+with open("../../artifacts/metrics/recoverability_features.json", "r") as f:
     features = json.load(f)
 
 # Filter out registry features for ablation

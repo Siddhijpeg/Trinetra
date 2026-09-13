@@ -5,7 +5,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", type=str, default="../../data/generated/pilot")
+    parser.add_argument("--data_dir", type=str, default="../../data/synthetic")
     return parser.parse_args()
 
 def run_validation():

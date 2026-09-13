@@ -18,11 +18,11 @@ print("================================================================")
 # ==========================================
 # 1. LOAD DATA & MODELS
 # ==========================================
-zones_df = pd.read_csv("../data/generated/full/zones.csv")
-with open("trained_model.json", "r") as f:
+zones_df = pd.read_csv("../data/synthetic/zones.csv")
+with open("../../artifacts/models/trained_model_m8.json", "r") as f:
     model_artifacts = json.load(f)
 xgb_model = xgb.XGBClassifier()
-xgb_model.load_model("xgboost_model.json")
+xgb_model.load_model("../../artifacts/models/xgboost_model_m8.json")
 
 global_prior = model_artifacts["global_prior"]
 typology_priors = model_artifacts["typology_priors"]
@@ -121,7 +121,7 @@ def run_inference(c_feat, h_feat):
 # 3. MULTICLASS CALIBRATION (Temperature Scaling)
 # ==========================================
 print("Calibrating models on Validation Set (Month 5)...")
-val_c, val_h, val_t = get_engineered_data("val", "../data/generated/splits")
+val_c, val_h, val_t = get_engineered_data("val", "../data/synthetic/splits")
 m2_val, m3h1_val, m3_val, m4_val, _ = run_inference(val_c, val_h)
 
 def nll_loss(T, logits_dict, targets):
@@ -152,7 +152,7 @@ def apply_temperature(logits_dict, T):
 # 4. FINAL TEST EVALUATION
 # ==========================================
 print("\nEvaluating on Final Touched Test Set (Month 6)...")
-test_c, test_h, test_t = get_engineered_data("test", "../data/generated/splits")
+test_c, test_h, test_t = get_engineered_data("test", "../data/synthetic/splits")
 m2_raw, m3h1_raw, m3_raw, m4_raw, test_histories = run_inference(test_c, test_h)
 
 # Apply temperatures
@@ -166,7 +166,7 @@ m0_probs = {c: np.array([global_prior.get(z, 0) for z in zone_list]) for c in te
 m1_probs = {c: np.array([typology_priors.get(typ, global_prior).get(z, 0) for z in zone_list]) for c, typ in zip(test_c['complaint_id'], test_c['typology_id'])}
 
 # Load special slices
-with open("../data/generated/splits/test_special_splits.json", "r") as f:
+with open("../data/synthetic/splits/test_special_splits.json", "r") as f:
     special_splits = json.load(f)
 
 def evaluate(probs_dict, targets, c_ids, name):

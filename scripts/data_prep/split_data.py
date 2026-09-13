@@ -6,8 +6,8 @@ import numpy as np
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", type=str, default="../../data/generated/full")
-    parser.add_argument("--out_dir", type=str, default="../../data/generated/splits")
+    parser.add_argument("--data_dir", type=str, default="../../data/synthetic")
+    parser.add_argument("--out_dir", type=str, default="../../data/synthetic/splits")
     return parser.parse_args()
 
 def run_split():

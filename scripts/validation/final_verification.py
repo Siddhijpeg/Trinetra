@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 
 def run_verification():
-    data_dir = "../../data/generated/full"
-    splits_dir = "../../data/generated/splits"
+    data_dir = "../../data/synthetic"
+    splits_dir = "../../data/synthetic/splits"
     
     print("==================================================")
     print("1. FINAL DATA COUNTS")

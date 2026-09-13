@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_complaints", type=int, default=5000, help="Number of complaints to generate")
     parser.add_argument("--num_syndicates", type=int, default=15, help="Number of latent syndicates")
-    parser.add_argument("--out_dir", type=str, default="../../data/generated/pilot", help="Output directory")
+    parser.add_argument("--out_dir", type=str, default="../../data/synthetic", help="Output directory")
     return parser.parse_args()
 
 def run_generator():

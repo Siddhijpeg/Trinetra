@@ -4,10 +4,10 @@ import json
 
 def build_recoverability_dataset():
     print("Loading raw data...")
-    hops = pd.read_csv("../data/generated/full/hops.csv")
-    cashouts = pd.read_csv("../data/generated/full/cashout_events.csv")
+    hops = pd.read_csv("../data/synthetic/hops.csv")
+    cashouts = pd.read_csv("../data/synthetic/cashout_events.csv")
     
-    with open("rich_registry.json", "r") as f:
+    with open("../../artifacts/models/rich_registry.json", "r") as f:
         registry = json.load(f)
         
     # Merge hops with cashout target
@@ -77,8 +77,8 @@ def build_recoverability_dataset():
 if __name__ == "__main__":
     t, v, te, f = build_recoverability_dataset()
     print("Features:", f)
-    t.to_csv("recoverability_train.csv", index=False)
-    v.to_csv("recoverability_val.csv", index=False)
-    te.to_csv("recoverability_test.csv", index=False)
-    with open("recoverability_features.json", "w") as fp:
+    t.to_csv("../../artifacts/metrics/recoverability_train.csv", index=False)
+    v.to_csv("../../artifacts/metrics/recoverability_val.csv", index=False)
+    te.to_csv("../../artifacts/metrics/recoverability_test.csv", index=False)
+    with open("../../artifacts/metrics/recoverability_features.json", "w") as fp:
         json.dump(f, fp)

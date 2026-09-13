@@ -8,12 +8,12 @@ import pandas as pd
 from scripts.data_prep.feature_engineering import get_engineered_data
 
 print("Loading data for Registry Optimization...")
-val_c, val_h, val_t = get_engineered_data("val", "../data/generated/splits")
-test_c, test_h, test_t = get_engineered_data("test", "../data/generated/splits")
+val_c, val_h, val_t = get_engineered_data("val", "../data/synthetic/splits")
+test_c, test_h, test_t = get_engineered_data("test", "../data/synthetic/splits")
 
-with open("trained_model.json", "r") as f:
+with open("../../artifacts/models/trained_model_m8.json", "r") as f:
     model_artifacts = json.load(f)
-with open("rich_registry.json", "r") as f:
+with open("../../artifacts/models/rich_registry.json", "r") as f:
     rich_registry = json.load(f)
 
 global_prior = model_artifacts["global_prior"]
@@ -23,7 +23,7 @@ node_risk_registry = model_artifacts["node_risk_registry"]
 zone_list = model_artifacts["encoders"]["target_zone"]
 zone_idx_map = {z: i for i, z in enumerate(zone_list)}
 
-zones_df = pd.read_csv("../data/generated/full/zones.csv")
+zones_df = pd.read_csv("../data/synthetic/zones.csv")
 def get_zone_coords(z_id):
     row = zones_df[zones_df['zone_id'] == z_id]
     if not row.empty:

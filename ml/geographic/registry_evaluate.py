@@ -13,12 +13,12 @@ print("================================================================")
 print("  REGISTRY INTELLIGENCE - FINAL TEST EVALUATION")
 print("================================================================")
 
-val_c, val_h, val_t = get_engineered_data("val", "../data/generated/splits")
-test_c, test_h, test_t = get_engineered_data("test", "../data/generated/splits")
+val_c, val_h, val_t = get_engineered_data("val", "../data/synthetic/splits")
+test_c, test_h, test_t = get_engineered_data("test", "../data/synthetic/splits")
 
-with open("trained_model.json", "r") as f:
+with open("../../artifacts/models/trained_model_m8.json", "r") as f:
     model_artifacts = json.load(f)
-with open("rich_registry.json", "r") as f:
+with open("../../artifacts/models/rich_registry.json", "r") as f:
     rich_registry = json.load(f)
 with open("registry_tuning_results.json", "r") as f:
     tuning_results = json.load(f)
@@ -35,7 +35,7 @@ node_risk_registry = model_artifacts["node_risk_registry"]
 zone_list = model_artifacts["encoders"]["target_zone"]
 zone_idx_map = {z: i for i, z in enumerate(zone_list)}
 log_global_prior = np.array([np.log(global_prior.get(z, 1e-6)) for z in zone_list])
-zones_df = pd.read_csv("../data/generated/full/zones.csv")
+zones_df = pd.read_csv("../data/synthetic/zones.csv")
 
 def get_zone_coords(z_id):
     row = zones_df[zones_df['zone_id'] == z_id]
@@ -170,7 +170,7 @@ p_m8 = probs_from_logits(t_m8, T_dict["M8"])
 
 # 4. Evaluation
 print("Evaluating on Final Test Set...")
-with open("../data/generated/splits/test_special_splits.json", "r") as f:
+with open("../data/synthetic/splits/test_special_splits.json", "r") as f:
     special = json.load(f)
     
 # Find hit / no-hit slices
