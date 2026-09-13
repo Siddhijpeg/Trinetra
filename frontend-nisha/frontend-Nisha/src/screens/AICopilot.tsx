@@ -1,156 +1,206 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { SparkleIcon, FeatureTag } from '../components/ui';
-import { SUGGESTED_PROMPTS, CANNED_RESPONSES } from '../data/mockCopilot';
-import type { CopilotMessage } from '../types';
+import React, { useState } from 'react';
+import { GoogleGenAI } from '@google/genai';
+import { Card, FeatureTag } from '../components/ui';
 
-type UIMessage = CopilotMessage & { isLoading?: boolean };
+interface Message {
+  id: string;
+  sender: 'user' | 'bot';
+  text: string;
+  sources?: { label: string; type: string }[];
+  timestamp: string;
+}
 
-const INITIAL_MESSAGES: UIMessage[] = [
-  {
-    role: 'user',
-    content: 'Why is Gurugram currently top-ranked?',
-    timestamp: '13:58',
-  },
-  {
-    ...CANNED_RESPONSES['p1'],
-    timestamp: '13:58',
-  },
+const PRESET_PROMPTS = [
+  "Why is Gurugram currently top-ranked?",
+  "Show the transaction trail for case NCRP-26-81942.",
+  "Which mule account appears across multiple cases?",
+  "Summarize this case for the report.",
+  "What OSINT signals support the Gurugram prediction?",
+  "How confident is the prediction and why?"
 ];
 
-export default function AICopilot({ onOpenCase }: { onOpenCase?: () => void }) {
-  const [messages, setMessages] = useState<UIMessage[]>(INITIAL_MESSAGES);
+export default function AICopilot() {
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'msg-1',
+      sender: 'bot',
+      text: "Welcome Officer. I am TRINETRA's AI Copilot powered directly by Google Gemini. Ask me any question regarding active NCRP cases or spatial risk predictions.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const handleSend = async (textToSend?: string) => {
+    const query = textToSend || input;
+    if (!query.trim()) return;
 
-  const sendMessage = (text: string) => {
-    if (!text.trim() || loading) return;
-    const userMsg: UIMessage = { role: 'user', content: text, timestamp: 'now' };
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: query,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setLoading(true);
+    setIsTyping(true);
 
-    setTimeout(() => {
-      // Match to a canned response by prompt text, or use a generic one
-      const matchedPrompt = SUGGESTED_PROMPTS.find(p =>
-        p.text.toLowerCase().includes(text.toLowerCase().slice(0, 20)) ||
-        text.toLowerCase().includes(p.text.toLowerCase().slice(0, 20))
-      );
-      const response = matchedPrompt
-        ? CANNED_RESPONSES[matchedPrompt.id]
-        : {
-            role: 'assistant' as const,
-            content: `I'm currently in prototype mode. I can answer questions about:\n• Prediction explanations\n• Transaction trails\n• Mule account patterns\n• Case summaries\n• OSINT context\n\nTry one of the suggested prompts below.`,
-            timestamp: 'now',
-          };
-      setMessages(prev => [...prev, response]);
-      setLoading(false);
-    }, 900);
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+    if (!apiKey) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          text: '❌ ERROR: VITE_GEMINI_API_KEY is missing in your .env file!',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setIsTyping(false);
+      return;
+    }
+
+    try {
+      // Initialize Official Google Gen AI Client
+      const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: `System Directive: You are TRINETRA AI Copilot, a high-level cybercrime intelligence assistant for police officers in India. Provide analytical, crisp, and forensic insights.\n\nUser Question: ${query}`
+      });
+
+      if (response.text) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: 'bot',
+            text: response.text,
+            sources: [{ label: 'Google Gemini Engine', type: 'gemini' }],
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+      } else {
+        throw new Error('No text returned from Gemini API.');
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("Gemini API Error:", err);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          text: `❌ Gemini API Error: ${errorMessage}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
-
+    <div className="p-7 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-[#E2E8F0] bg-white flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7C5CFC, #4338CA)' }}>
-            <SparkleIcon size={16} />
+          <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-lg shadow-md">
+            /
           </div>
           <div>
-            <div className="font-bold text-[#0F172A] text-sm">AI Investigator Copilot</div>
-            <div className="text-[10px] text-[#94A3B8]">Prototype — responses grounded in case, prediction, and OSINT data</div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-900">AI Investigator Copilot</h1>
+              <FeatureTag type="usp" />
+            </div>
+            <p className="text-xs text-slate-500">Connected directly via Google GenAI SDK.</p>
           </div>
         </div>
-        <FeatureTag type="usp" />
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Gemini SDK Engine
+        </span>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#F7F8FA]">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center mr-2.5 flex-shrink-0 mt-0.5" style={{ background: 'linear-gradient(135deg, #7C5CFC, #4338CA)' }}>
-                <SparkleIcon size={12} />
-              </div>
-            )}
-            <div className={`max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-              <div className={`px-4 py-3 rounded-2xl text-xs leading-relaxed whitespace-pre-line ${
-                msg.role === 'user'
-                  ? 'bg-[#0F172A] text-white rounded-tr-sm'
-                  : 'bg-white border border-[#E2E8F0] text-[#0F172A] rounded-tl-sm shadow-sm'
-              }`}>
-                {msg.content}
-              </div>
-              {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] text-[#94A3B8] uppercase tracking-wide">Sources:</span>
-                  {msg.sources.map(s => (
-                    <span key={s} className="text-[9px] bg-[#7C5CFC]/8 text-[#7C5CFC] border border-[#7C5CFC]/15 px-1.5 py-0.5 rounded font-medium">
-                      {s}
-                    </span>
-                  ))}
+      {/* Chat Messages */}
+      <Card className="p-6 min-h-[440px] flex flex-col justify-between border-slate-200 shadow-sm bg-slate-50/30">
+        <div className="space-y-6 overflow-y-auto max-h-[480px] pr-2">
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-3xl space-y-2 ${msg.sender === 'user' ? 'flex flex-col items-end' : ''}`}>
+                <div
+                  className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                    msg.sender === 'user'
+                      ? 'bg-slate-900 text-white rounded-br-none shadow-sm'
+                      : 'bg-white text-slate-800 border border-slate-200/90 rounded-bl-none shadow-xs'
+                  }`}
+                >
+                  <p className="whitespace-pre-line font-normal">{msg.text}</p>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
 
-        {loading && (
-          <div className="flex justify-start">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center mr-2.5" style={{ background: 'linear-gradient(135deg, #7C5CFC, #4338CA)' }}>
-              <SparkleIcon size={12} />
+                {msg.sender === 'bot' && msg.sources && (
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sources:</span>
+                    {msg.sources.map((src, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-300"
+                      >
+                        {src.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white border border-[#E2E8F0] shadow-sm flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#7C5CFC] animate-bounce" style={{ animationDelay: '0ms' }}/>
-              <div className="w-1.5 h-1.5 rounded-full bg-[#7C5CFC] animate-bounce" style={{ animationDelay: '150ms' }}/>
-              <div className="w-1.5 h-1.5 rounded-full bg-[#7C5CFC] animate-bounce" style={{ animationDelay: '300ms' }}/>
-            </div>
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
-
-      {/* Suggested prompts */}
-      <div className="px-6 py-3 border-t border-[#E2E8F0] bg-white">
-        <div className="flex gap-2 flex-wrap mb-3">
-          {SUGGESTED_PROMPTS.map(p => (
-            <button
-              key={p.id}
-              onClick={() => sendMessage(p.text)}
-              className="px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-xs text-[#475569] hover:border-[#7C5CFC]/30 hover:text-[#7C5CFC] transition-colors bg-white"
-            >
-              {p.text}
-            </button>
           ))}
+
+          {isTyping && (
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono pl-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.2s]"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.4s]"></span>
+              <span className="ml-1 text-slate-900 font-semibold">Gemini SDK responding...</span>
+            </div>
+          )}
         </div>
 
-        {/* Input */}
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-[#E2E8F0] bg-[#F7F8FA] focus-within:border-[#7C5CFC] focus-within:ring-2 focus-within:ring-[#7C5CFC]/10 transition-all">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
-            placeholder="Ask about a case, prediction, or mule account…"
-            className="flex-1 bg-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] outline-none"
-          />
-          <button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-white transition-opacity disabled:opacity-40 hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #7C5CFC, #4338CA)' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M13 1L8 13L6 7L1 5L13 1Z" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/>
-            </svg>
-          </button>
+        {/* Input & Prompt Chips */}
+        <div className="mt-6 space-y-3 pt-4 border-t border-slate-200/60">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {PRESET_PROMPTS.map((prompt, i) => (
+              <button
+                key={i}
+                onClick={() => handleSend(prompt)}
+                className="px-3 py-1.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium whitespace-nowrap transition-all shadow-2xs cursor-pointer"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask Gemini SDK..."
+              className="w-full pl-4 pr-12 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 shadow-2xs"
+            />
+            <button
+              onClick={() => handleSend()}
+              className="absolute right-2 p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
