@@ -55,14 +55,13 @@ export default function FraudNetwork() {
 
   return (
     <div className="p-6 flex flex-col gap-4 h-full bg-[#F8FAFC]">
-      {/* Keyframe animation for blue flow lines */}
+      {/* Keyframe animation for line flow (works for both solid and dashed lines) */}
       <style>{`
         @keyframes flowAnimation {
           0% { stroke-dashoffset: 24; }
           100% { stroke-dashoffset: 0; }
         }
         .animate-line-flow {
-          stroke-dasharray: 6, 6;
           animation: flowAnimation 1s linear infinite;
         }
       `}</style>
@@ -158,7 +157,7 @@ export default function FraudNetwork() {
                     strokeOpacity={0.25}
                   />
 
-                  {/* Connecting Line with Flow Effect */}
+                  {/* Connecting Line - Animated for BOTH Blue & Red Lines */}
                   <line
                     x1={source.x}
                     y1={source.y}
@@ -166,8 +165,8 @@ export default function FraudNetwork() {
                     y2={target.y}
                     stroke={e.dashed ? '#F87171' : '#38BDF8'}
                     strokeWidth={2}
-                    strokeDasharray={e.dashed ? '4,4' : undefined}
-                    className={!e.dashed ? 'animate-line-flow' : ''}
+                    strokeDasharray="6,6"
+                    className="animate-line-flow"
                   />
 
                   {e.label && (
@@ -200,7 +199,7 @@ export default function FraudNetwork() {
               );
             })}
 
-            {/* Clean Circles without Background Glow */}
+            {/* Nodes */}
             {nodes.map((n) => {
               const isSelected = n.id === selectedNodeId;
               const isVisible = n.depth <= depth;
@@ -269,7 +268,7 @@ export default function FraudNetwork() {
                     className="transition-transform duration-200 group-hover:scale-105"
                   />
 
-                  {/* White Node Text - San Francisco Font */}
+                  {/* Node Text */}
                   <text
                     y={4}
                     textAnchor="middle"
