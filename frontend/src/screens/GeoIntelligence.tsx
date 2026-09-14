@@ -4,9 +4,8 @@ import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveCont
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Card, FeatureTag, Button } from '../components/ui';
-import { useCaseContext, ZONE_LABELS, ZONE_COORDS } from '../context/CaseContext';
+import { useCaseContext, ZONE_LABELS, ZONE_COORDS, formatAmountInr } from '../context/CaseContext';
 import type { BackendPrediction } from '../context/CaseContext';
-import { CASE_FIXTURES, buildStagePayload, formatAmountInr } from '../data/caseFixtures';
 import { ZONES_RAW, ACTIVE_RISK_ZONES } from '../data/mockZones';
 import { useTheme } from '../context/ThemeContext';
 
@@ -33,13 +32,12 @@ const MAP_LAYERS = [
   { id: 'osint',        label: 'OSINT Signals',         defaultOn: false, available: false },
 ];
 
-// Prediction snapshot stages derived from a fixture's hop count
+// Snapshot stages derived from the active V2 case evidence_stages (or hop count)
 const getSnapshotStages = (hopCount: number) => {
   const stages = [{ id: 0, label: 'T0', desc: 'Initial prediction' }];
   for (let i = 1; i <= Math.min(hopCount, 3); i++) {
     stages.push({ id: i, label: `Hop ${i}`, desc: `After ${i === 1 ? 'first' : i === 2 ? 'second' : 'third'}-hop analysis` });
   }
-  // Always add "Latest" pointing to the final stage
   if (hopCount > 0) {
     stages.push({ id: hopCount, label: 'Latest', desc: 'Most recent evidence', isLatest: true } as any);
   }
@@ -47,6 +45,9 @@ const getSnapshotStages = (hopCount: number) => {
 };
 
 // ── Lookup helpers ────────────────────────────────────────────────────────────
+// For V2 zone IDs (V2_ZID_xxx), coordinates and names are embedded in the
+// ranked_zones array returned by the API — no ZONES_RAW lookup needed.
+// These helpers are only used as fallback for V1-era Z000–Z019 zone IDs.
 const getZoneCoords = (zoneId: string): { lat: number; lng: number } | null => {
   const z = ZONES_RAW.find(z => z.zoneId === zoneId);
   return z ? { lat: z.lat, lng: z.lng } : null;
@@ -60,20 +61,37 @@ const getZoneState = (zoneId: string): string => {
 const getZoneName = (zoneId: string): string =>
   ZONE_LABELS[zoneId] || ZONES_RAW.find(z => z.zoneId === zoneId)?.district || zoneId;
 
-// Derive a ranked-zone list from a prediction, merging in coordinates
+// Derive a ranked-zone list from a V2 prediction.
+// V2: ranked_zones[].probability is a 0–1 float — multiply by 100 for display.
+// V2: ranked_zones carry lat/lng/zone_name/district/state inline.
+// Fallback to ZONES_RAW lookup only for legacy V1-era Z000–Z019 zone IDs.
 const buildRankedZones = (pred: BackendPrediction | null) => {
   if (!pred?.geographic?.ranked_zones?.length) return [];
   return pred.geographic.ranked_zones
     .slice(0, 7)
-    .map((rz, i) => ({
-      zoneId:  rz.zone_id,
-      name:    rz.district || getZoneName(rz.zone_id),
-      state:   getZoneState(rz.zone_id),
-      prob:    Math.round(rz.probability),
-      coords:  getZoneCoords(rz.zone_id),
-      rank:    i + 1,
-      color:   getRankColor(i),
-    }));
+    .map((rz, i) => {
+      // V2 returns probability as 0–1 float; convert to integer percent
+      const probPct = Math.round(rz.probability * 100);
+      // Display name: prefer zone_name or district embedded in the response
+      const name = rz.district || (rz as any).zone_name || getZoneName(rz.zone_id);
+      const state = rz.state || getZoneState(rz.zone_id);
+      // Coordinates: prefer inline lat/lng from V2, fall back to ZONES_RAW
+      const inlineLat = (rz as any).lat;
+      const inlineLng = (rz as any).lng;
+      const coords: { lat: number; lng: number } | null =
+        (inlineLat && inlineLng && !(inlineLat === 0 && inlineLng === 0))
+          ? { lat: inlineLat, lng: inlineLng }
+          : getZoneCoords(rz.zone_id);
+      return {
+        zoneId:  rz.zone_id,
+        name,
+        state,
+        prob:    probPct,
+        coords,
+        rank:    i + 1,
+        color:   getRankColor(i),
+      };
+    });
 };
 
 // Compute top-3 probability mass
@@ -97,12 +115,12 @@ function MapTileUpdater({ url, attribution }: { url: string; attribution: string
   return null;
 }
 
-// ── Why-this-zone explanations (derived from real signals) ────────────────────
+// ── Why-this-zone explanations (derived from real V2 signals) ────────────────
 const buildWhyExplanations = (
   pred: BackendPrediction | null,
   prevPred: BackendPrediction | null,
   zoneId: string,
-  fixture: (typeof CASE_FIXTURES)[0] | undefined,
+  fixture: any,
   stageId: number,
 ) => {
   const explanations: string[] = [];
@@ -112,7 +130,7 @@ const buildWhyExplanations = (
   const topZone = ranked[0];
   const isTopZone = topZone?.zoneId === zoneId;
 
-  // 1. Probability shift
+  // 1. Probability shift between stages
   if (prevPred && stageId > 0) {
     const prevRanked = buildRankedZones(prevPred);
     const prevEntry = prevRanked.find(z => z.zoneId === zoneId);
@@ -120,14 +138,14 @@ const buildWhyExplanations = (
     if (curEntry && prevEntry) {
       const delta = curEntry.prob - prevEntry.prob;
       if (delta > 0)
-        explanations.push(`Probability increased +${delta}% after latest transfer evidence.`);
+        explanations.push(`Probability increased +${delta}pp after latest transfer evidence.`);
       else if (delta < 0)
-        explanations.push(`Probability adjusted ${delta}% as new evidence narrowed other zones.`);
+        explanations.push(`Probability adjusted ${delta}pp as new evidence narrowed other zones.`);
     } else if (curEntry && !prevEntry) {
       explanations.push(`Zone entered top-ranked list after Hop ${stageId} evidence.`);
     }
   } else if (stageId === 0) {
-    explanations.push(`Prior probability based on M8 registry reliability and typology base rate.`);
+    explanations.push('Prior probability based on M8 registry reliability and typology base rate.');
   }
 
   // 2. Top-3 concentration
@@ -141,19 +159,24 @@ const buildWhyExplanations = (
     explanations.push(`Sequential evidence from ${stageId} observed hop${stageId > 1 ? 's' : ''} narrowed geographic probability.`);
   }
 
-  // 4. Registry reason codes
-  const codes = pred.decision.reason_codes || [];
-  const registryCodes = codes.filter(c =>
-    c.toLowerCase().includes('registry') || c.toLowerCase().includes('flag') || c.toLowerCase().includes('mule')
-  );
-  if (registryCodes.length > 0) {
-    explanations.push(`Registry-linked entities associated with this region: ${registryCodes[0].replace(/_/g, ' ')}.`);
+  // 4. V2 decision reasons (human-readable strings, not code tokens)
+  // Use decision.reasons (V2) instead of decision.reason_codes (V1)
+  const reasons: string[] = pred.decision.reasons || [];
+  if (reasons.length > 0 && isTopZone) {
+    // Include the first reason that mentions registry, evidence, or geo
+    const geoReason = reasons.find(r =>
+      r.toLowerCase().includes('registry') ||
+      r.toLowerCase().includes('geographic') ||
+      r.toLowerCase().includes('zone') ||
+      r.toLowerCase().includes('signal')
+    );
+    if (geoReason) explanations.push(geoReason);
   }
 
-  // 5. Confidence level
-  const conf = Math.round(pred.geographic.confidence_score || pred.decision.decision_confidence || 0);
-  if (isTopZone && conf >= 75)
-    explanations.push(`High model confidence (${conf}%) — M8 Bayesian update strongly favours this zone.`);
+  // 5. Confidence level from geographic engine
+  const conf = Math.round(pred.geographic.confidence_score || 0);
+  if (isTopZone && conf >= 20)
+    explanations.push(`M8 model confidence: ${conf}% — strongest spatial convergence zone.`);
 
   return explanations.slice(0, 4);
 };
@@ -189,24 +212,56 @@ function InfoIcon() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function GeoIntelligence() {
-  const { activeCaseId, getStagedPrediction, isStagedLoading, caseFixtures, setActiveCase } = useCaseContext();
+  const { activeCaseId, getStagedPrediction, isStagedLoading, caseList, setActiveCase,
+          activeCase, requestPrediction, predictions } = useCaseContext() as any;
   const { theme } = useTheme();
 
-  // Use the active case or default to first fixture
-  const fixture = caseFixtures.find(c => c.case_id === activeCaseId) || caseFixtures[0];
-  const maxStage = fixture?.hops.length ?? 0;
+  // Use the active case hop count or fall back to 0
+  const maxStage = activeCase?.hop_count ?? 0;
+  // Build snapshot stages from active case
   const snapshotStages = getSnapshotStages(maxStage);
 
-  const [activeStageId, setActiveStageId] = useState<number>(maxStage);
-  const [activeLayers, setActiveLayers]   = useState<Record<string, boolean>>(
+  // getStagedPrediction shim: read from predictions cache using "caseId:stage" key
+  const getStagedPred = (caseId: string, stage: number): BackendPrediction | null => {
+    const key = `${caseId}:${stage}`;
+    const pred = (predictions as Record<string, BackendPrediction | null>)[key];
+    if (pred) return pred;
+    // Try stage=-1 (latest) as fallback for the latest stage
+    const latestKey = `${caseId}:-1`;
+    if (stage === maxStage) return (predictions as any)[latestKey] ?? null;
+    return null;
+  };
+
+  const fixture = caseList.find((c: any) => c.case_id === activeCaseId) || caseList[0];
+
+  const [activeStageId, setActiveStageId]   = useState<number>(maxStage);
+  const [activeLayers, setActiveLayers]     = useState<Record<string, boolean>>(
     () => Object.fromEntries(MAP_LAYERS.map(l => [l.id, l.defaultOn]))
   );
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
 
-  // Fetch staged predictions via context
-  const currentPred = getStagedPrediction(fixture?.case_id ?? '', activeStageId);
-  const prevPred    = activeStageId > 0 ? getStagedPrediction(fixture?.case_id ?? '', activeStageId - 1) : null;
-  const loading     = isStagedLoading(fixture?.case_id ?? '');
+  // When active case changes, request staged predictions and reset stage
+  useEffect(() => {
+    if (activeCaseId) {
+      const newMax = activeCase?.hop_count ?? 0;
+      setActiveStageId(newMax);
+      // Request latest prediction
+      requestPrediction(activeCaseId, -1);
+      // Request T0
+      requestPrediction(activeCaseId, 0);
+    }
+  }, [activeCaseId]);
+
+  // Fetch staged prediction when stage changes
+  useEffect(() => {
+    if (activeCaseId && activeStageId >= 0) {
+      requestPrediction(activeCaseId, activeStageId);
+    }
+  }, [activeStageId, activeCaseId]);
+
+  const currentPred = getStagedPred(activeCaseId ?? '', activeStageId);
+  const prevPred    = activeStageId > 0 ? getStagedPred(activeCaseId ?? '', activeStageId - 1) : null;
+  const loading     = isStagedLoading ? isStagedLoading(activeCaseId ?? '') : false;
 
   // Build ranked zones from current prediction
   const rankedZones = buildRankedZones(currentPred);
@@ -230,10 +285,16 @@ export default function GeoIntelligence() {
 
   // Summary metric derivations
   const confidence  = currentPred
-    ? Math.round(currentPred.geographic.confidence_score || currentPred.decision.decision_confidence || 0)
+    ? Math.round(currentPred.geographic.confidence_score || 0)
     : null;
   const top3Cov     = rankedZones.length ? top3Coverage(rankedZones) : null;
-  const registryCount = fixture?.hops.length ?? 0;  // REAL: hops observed = evidence events
+  // Registry evidence: count of distinct hops that had in-registry accounts
+  const registrySignals = currentPred?.geographic?.registry_signals || [];
+  const registryCount = registrySignals.filter(s => s.in_registry).length || (activeCase?.hop_count ?? 0);
+  // Best reliability from registry signals (0–1 float)
+  const bestReliability = registrySignals.length > 0
+    ? Math.max(...registrySignals.map(s => s.reliability || 0))
+    : null;
   const p50         = currentPred?.timing?.intervention_distribution?.p50_minutes
     ? Math.round(currentPred.timing.intervention_distribution.p50_minutes)
     : null;
@@ -243,7 +304,7 @@ export default function GeoIntelligence() {
   const topOutside = top3Cov !== null ? 100 - top3Cov : null;
 
   // Evolution chart data
-  const allStagePreds = snapshotStages.map(s => getStagedPrediction(fixture?.case_id ?? '', s.id));
+  const allStagePreds = snapshotStages.map(s => getStagedPred(activeCaseId ?? '', s.id));
   const top3Ids = rankedZones.slice(0, 3).map(z => z.zoneId);
   const evolutionData = buildEvolutionData(allStagePreds, snapshotStages.map(s => s.label), top3Ids);
   const hasEvolutionData = evolutionData.some(d => top3Ids.some(id => d[id] !== null));
@@ -394,7 +455,9 @@ export default function GeoIntelligence() {
               </div>
               <div className="text-[10px] mt-0.5 font-mono" style={{ color: '#7C5CFC' }}>
                 {currentPred
-                  ? `Reliability: ${(currentPred.geographic.confidence_score / 100).toFixed(2)}`
+                  ? bestReliability !== null
+                    ? `Best reliability: ${bestReliability.toFixed(2)}`
+                    : `${registrySignals.length} hop signals`
                   : usingFallback ? 'Reliability: 0.82' : 'Awaiting…'}
               </div>
             </div>
@@ -678,17 +741,17 @@ export default function GeoIntelligence() {
                     <span className="font-bold font-mono" style={{ color: 'var(--text-primary)' }}>
                       {usingFallback
                         ? ACTIVE_RISK_ZONES.find(z => z.zoneId === displaySelectedZone.zoneId)?.cases ?? '—'
-                        : caseFixtures.filter(f => {
-                            const p = getStagedPrediction(f.case_id, f.hops.length);
+                        : caseList.filter((item: any) => {
+                            const p = getStagedPred(item.case_id, -1);
                             return p?.geographic.predicted_destination_zone === displaySelectedZone.zoneId;
                           }).length || '—'}
                     </span>
                   </div>
-                  {currentPred && (
+                  {currentPred && bestReliability !== null && (
                     <div className="flex items-center justify-between text-xs">
-                      <span style={{ color: 'var(--text-secondary)' }}>Registry Reliability</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>Best Registry Reliability</span>
                       <span className="font-bold font-mono" style={{ color: '#7C5CFC' }}>
-                        {(currentPred.geographic.confidence_score / 100).toFixed(2)}
+                        {bestReliability.toFixed(3)}
                       </span>
                     </div>
                   )}

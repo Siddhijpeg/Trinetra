@@ -1,93 +1,135 @@
+// ─── Case Workspace ───────────────────────────────────────────────────────────
+// Displays the active V2 case — transaction trail, timeline, prediction
+// evolution and decision support.
+//
+// All case data comes from CaseContext.activeCase (V2 backend detail).
+// Prediction data comes from CaseContext.getActivePrediction().
+// No hardcoded NCRP fixtures. No DEMO_CASE_* imports.
+
 import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import {
-  LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip,
-} from 'recharts';
-import { Card, RiskBadge, Button, SparkleIcon, FeatureTag, PrototypeBadge, ConfidenceBar, TimelineEvent } from '../components/ui';
-import { DEMO_CASE_HOPS, DEMO_CASE_ACCOUNTS, DEMO_CASE_TIMELINE } from '../data/mockCases';
-import { PREDICTION_EVOLUTION_STEPS, PREDICTION_DECISION, EXPLAINABILITY_FACTORS } from '../data/mockPredictions';
-import { fetchPredictionFromAPI } from '../services/prototypeService';
-import type { OutcomeType, PredictionStage, CasePrediction } from '../types';
+  Card, RiskBadge, Button, SparkleIcon, FeatureTag,
+  PrototypeBadge, ConfidenceBar, TimelineEvent,
+} from '../components/ui';
+import { useCaseContext, priorityColor, priorityRiskLevel } from '../context/CaseContext';
+import type { V2Hop } from '../context/CaseContext';
+import type { OutcomeType } from '../types';
 
-// ─── Confidence level label helper ───────────────────────────────────────────
-const confidenceLabel = (c: number) =>
-  c >= 75 ? 'HIGH' : c >= 50 ? 'MEDIUM' : 'LOW';
+// ── Formatting helpers ─────────────────────────────────────────────────────────
 
-const confidenceColor = (c: number) =>
-  c >= 75 ? '#10B981' : c >= 50 ? '#F59E0B' : '#94A3B8';
+function formatAmount(inr: number): string {
+  if (inr >= 10_000_000) return `₹${(inr / 10_000_000).toFixed(1)} Cr`;
+  if (inr >= 100_000)    return `₹${(inr / 100_000).toFixed(1)}L`;
+  if (inr >= 1_000)      return `₹${(inr / 1_000).toFixed(0)}K`;
+  return `₹${inr.toFixed(0)}`;
+}
 
-// ─── Outcome options ──────────────────────────────────────────────────────────
+function shortTime(ts: string): string {
+  if (!ts) return '—';
+  try {
+    const d = new Date(ts);
+    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return ts.slice(11, 16);
+  }
+}
+
+function shortDate(ts: string): string {
+  if (!ts) return '—';
+  try {
+    const d = new Date(ts);
+    return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return ts.slice(0, 16);
+  }
+}
+
+// ── Outcome options ────────────────────────────────────────────────────────────
 const OUTCOMES: { value: OutcomeType; label: string }[] = [
-  { value: 'funds-frozen',   label: 'Funds Frozen' },
-  { value: 'funds-recovered',label: 'Funds Recovered' },
-  { value: 'false-alert',    label: 'False Alert' },
-  { value: 'no-action',      label: 'No Action Taken' },
-  { value: 'unknown',        label: 'Unknown' },
+  { value: 'funds-frozen',    label: 'Funds Frozen'     },
+  { value: 'funds-recovered', label: 'Funds Recovered'  },
+  { value: 'false-alert',     label: 'False Alert'      },
+  { value: 'no-action',       label: 'No Action Taken'  },
+  { value: 'unknown',         label: 'Unknown'          },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
-  const [predStage, setPredStage] = useState<PredictionStage>(0);
-  const [xaiOpen, setXaiOpen] = useState(false);
-  const [selectedOutcome, setSelectedOutcome] = useState<OutcomeType | null>(null);
-  const [outcomeSubmitted, setOutcomeSubmitted] = useState(false);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [livePrediction, setLivePrediction] = useState<CasePrediction | null>(null);
-  const [apiLoading, setApiLoading] = useState<boolean>(false);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const {
+    activeCaseId, activeCase, activeCaseLoading, activeCaseError,
+    activeStage, setActiveStage,
+    getActivePrediction, requestPrediction,
+    predictionsLoading, predictionsError,
+  } = useCaseContext();
 
+  const [xaiOpen,            setXaiOpen]            = useState(false);
+  const [selectedOutcome,    setSelectedOutcome]    = useState<OutcomeType | null>(null);
+  const [outcomeSubmitted,   setOutcomeSubmitted]   = useState(false);
+  const [toastVisible,       setToastVisible]       = useState(false);
+  const [displayedStageIdx,  setDisplayedStageIdx] = useState(0);  // index into evidence_stages
+
+  const pred     = getActivePrediction();
+  const stages   = activeCase?.evidence_stages ?? [];
+  const hops     = activeCase?.hops            ?? [];
+  const complaint = activeCase?.complaint;
+
+  // On new case load, advance display to latest stage
   useEffect(() => {
-    const loadLivePrediction = async () => {
-      setApiLoading(true);
-      setApiError(null);
-      try {
-        const pred = await fetchPredictionFromAPI({
-          case_id: 'NCRP-26-81942',
-          prediction_time: '2025-06-01T10:15:00',
-          sla_minutes: 45.0,
-          complaint: {
-            complaint_id: 'NCRP-26-81942',
-            incident_time: '2025-06-01T10:00:00',
-            available_time: '2025-06-01T10:05:00',
-            amount_inr: 480000.0,
-            typology_id: 'TYP_INVESTMENT'
-          },
-          hops: [
-            {
-              hop_id: 'HOP_1',
-              event_time: '2025-06-01T10:05:00',
-              available_time: '2025-06-01T10:10:00',
-              amount: 180000.0,
-              destination_account: 'ACC_7821'
-            },
-            {
-              hop_id: 'HOP_2',
-              event_time: '2025-06-01T10:11:00',
-              available_time: '2025-06-01T10:14:00',
-              amount: 150000.0,
-              destination_account: 'ACC_3294'
-            }
-          ]
-        });
-        setLivePrediction(pred);
-      } catch (e: any) {
-        setApiError(e.message || 'API Unavailable');
-      } finally {
-        setApiLoading(false);
-      }
-    };
-    loadLivePrediction();
-  }, []);
+    if (stages.length > 0) {
+      setDisplayedStageIdx(stages.length - 1);
+    }
+  }, [activeCase?.case_id]);
 
-  const stepsToUse = livePrediction?.evolutionSteps || PREDICTION_EVOLUTION_STEPS;
-  const currentStep = stepsToUse[Math.min(predStage, stepsToUse.length - 1)] || PREDICTION_EVOLUTION_STEPS[0];
-  const decision = livePrediction?.decision || PREDICTION_DECISION;
-  const factorsToUse = livePrediction?.explainabilityFactors || EXPLAINABILITY_FACTORS;
+  // When stage display changes, request that stage's prediction
+  useEffect(() => {
+    const st = stages[displayedStageIdx];
+    if (st && activeCaseId) {
+      setActiveStage(st.stage);
+    }
+  }, [displayedStageIdx]);
 
-  const handleNextHop = () => {
-    if (predStage < 3) setPredStage((s) => (s + 1) as PredictionStage);
-  };
+  const predLoading = activeCaseId
+    ? (predictionsLoading[`${activeCaseId}:${activeStage}`] || predictionsLoading[`${activeCaseId}:-1`] || false)
+    : false;
+  const predError = activeCaseId
+    ? (predictionsError[`${activeCaseId}:${activeStage}`] || predictionsError[`${activeCaseId}:-1`] || null)
+    : null;
 
+  // Decision data
+  const dec  = pred?.decision;
+  const geo  = pred?.geographic;
+  const tim  = pred?.timing;
+  const dist = tim?.intervention_distribution;
+  const fin  = pred?.financial_exposure;
+
+  const decisionLabel    = dec?.decision ?? null;
+  const decisionConfPct  = Math.round((dec?.decision_confidence ?? 0) * 100);
+  const decisionColor    = decisionLabel ? priorityColor(decisionLabel) : '#94A3B8';
+  const reasons          = dec?.reasons ?? [];
+  const topZoneStr       = geo?.ranked_zones?.[0]
+    ? `${geo.ranked_zones[0].district || geo.ranked_zones[0].zone_name} (${geo.ranked_zones[0].zone_id})`
+    : geo?.predicted_destination_zone ?? '—';
+
+  const p25 = dist?.p25_minutes != null ? Math.round(dist.p25_minutes) : null;
+  const p50 = dist?.p50_minutes != null ? Math.round(dist.p50_minutes) : null;
+  const p75 = dist?.p75_minutes != null ? Math.round(dist.p75_minutes) : null;
+
+  // Chart: confidence over stages (from prediction_history if available)
+  const predHistory = geo?.prediction_history ?? [];
+  const evolutionChartData = predHistory.map(h => ({
+    label:      h.stage === 'T0_prior' ? 'Prior' : h.stage,
+    confidence: Math.round(h.confidence ?? 0),
+  }));
+  if (evolutionChartData.length === 0 && pred) {
+    evolutionChartData.push({
+      label:      'Latest',
+      confidence: Math.round(geo?.confidence_score ?? 0),
+    });
+  }
+
+  // Outcome submission
   const handleOutcomeSubmit = () => {
     if (!selectedOutcome) return;
     setOutcomeSubmitted(true);
@@ -95,37 +137,85 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
     setTimeout(() => setToastVisible(false), 3500);
   };
 
-  // Chart data for prediction evolution
-  const evolutionChartData = PREDICTION_EVOLUTION_STEPS.slice(0, predStage + 1).map(s => ({
-    label: s.label,
-    confidence: s.confidence,
-  }));
+  // ── Loading / error / no-case states ─────────────────────────────────────────
+  if (!activeCaseId) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="text-center space-y-2">
+          <div className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+            No case selected
+          </div>
+          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Open a case from the Cases table to view its workspace.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeCaseLoading) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="text-sm animate-pulse" style={{ color: 'var(--text-muted)' }}>
+          Loading case {activeCaseId}…
+        </div>
+      </div>
+    );
+  }
+
+  if (activeCaseError || !activeCase) {
+    return (
+      <div className="flex items-center justify-center h-full p-8">
+        <div className="text-center space-y-2">
+          <div className="text-sm font-semibold text-[#E5484D]">Case data unavailable</div>
+          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {activeCaseError || 'Could not load case detail from backend.'}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-5">
 
-      {/* ── Header ── */}
+      {/* ── Header ────────────────────────────────────────────────────────────── */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <button onClick={onBack} className="text-xs flex items-center gap-1 font-medium transition-colors"
+          <button onClick={onBack}
+            className="text-xs flex items-center gap-1 font-medium transition-colors"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             Cases
           </button>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2L8 6L4 10" stroke="#CBD5E1" strokeWidth="1.3" strokeLinecap="round"/></svg>
-          <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>NCRP-26-81942</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M4 2L8 6L4 10" stroke="#CBD5E1" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+          <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+            {activeCaseId}
+          </span>
         </div>
 
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[24px] font-bold" style={{ color: 'var(--text-primary)' }}>Case NCRP-26-81942</h1>
-              <RiskBadge level="critical" />
+              <h1 className="text-[24px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                Case {activeCaseId}
+              </h1>
+              {decisionLabel && (
+                <RiskBadge level={priorityRiskLevel(decisionLabel)} />
+              )}
               <FeatureTag type="sih" />
             </div>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Investment Fraud · ₹4,80,000 · Reported from New Delhi</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {complaint?.typology_name ?? complaint?.typology_id ?? '—'}
+              {complaint?.amount_inr ? ` · ${formatAmount(complaint.amount_inr)}` : ''}
+              {complaint?.victim_district ? ` · Reported from ${complaint.victim_district}, ${complaint.victim_state}` : ''}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm">Generate Report</Button>
@@ -135,256 +225,280 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
         </div>
       </div>
 
-      {/* ── Main Layout ── */}
+      {/* ── Main Layout ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-12 gap-5">
 
-        {/* ── Left: Timeline + Snapshot ── */}
+        {/* ── LEFT: Case details + Timeline ─────────────────────────────────── */}
         <div className="col-span-3 space-y-4">
 
-          {/* Case Snapshot */}
+          {/* Case snapshot */}
           <Card className="p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Case Details</div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-3"
+              style={{ color: 'var(--text-secondary)' }}>Case Details</div>
             <div className="space-y-2">
               {[
-                { label: 'Complaint Time', value: '13:42 IST' },
-                { label: 'Victim Location', value: 'New Delhi' },
-                { label: 'Fraud Amount',    value: '₹4.8 lakh' },
-                { label: 'Transaction Hops', value: '3 observed + 1 predicted' },
-                { label: 'Linked Accounts', value: '4 (2 Persistent Risk)' },
+                { label: 'Complaint ID',   value: activeCaseId },
+                { label: 'Typology',       value: complaint?.typology_name ?? '—' },
+                { label: 'Incident Time',  value: complaint?.incident_timestamp ? shortDate(complaint.incident_timestamp) : '—' },
+                { label: 'Victim',         value: complaint ? `${complaint.victim_district}, ${complaint.victim_state}` : '—' },
+                { label: 'Amount',         value: complaint?.amount_inr ? formatAmount(complaint.amount_inr) : '—' },
+                { label: 'Observed Hops',  value: String(hops.length) },
               ].map(r => (
                 <div key={r.label} className="flex items-start justify-between gap-2">
                   <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{r.label}</span>
-                  <span className="text-xs font-semibold text-right" style={{ color: 'var(--text-primary)' }}>{r.value}</span>
+                  <span className="text-xs font-semibold text-right font-mono" style={{ color: 'var(--text-primary)' }}>
+                    {r.value}
+                  </span>
                 </div>
               ))}
             </div>
-            {/* Predicted zone */}
-            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-              <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Predicted Cash-Out Zone</div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#E5484D] pulse-dot flex-shrink-0" />
-                <span className="text-xs font-bold text-[#E5484D]">Gurugram Sector 29</span>
+
+            {/* Predicted zone from V2 prediction */}
+            {pred && (
+              <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Predicted Cash-Out Zone
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0 pulse-dot"
+                    style={{ backgroundColor: decisionColor }} />
+                  <span className="text-xs font-bold" style={{ color: decisionColor }}>
+                    {topZoneStr}
+                  </span>
+                </div>
+                {p50 !== null && (
+                  <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    Median intervention window: ~{p50} min
+                  </div>
+                )}
               </div>
-              <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Est. window: 14:28 – 15:32 IST</div>
-            </div>
+            )}
           </Card>
 
-          {/* Timeline */}
+          {/* Evidence stage selector */}
+          {stages.length > 0 && (
+            <Card className="p-4">
+              <div className="text-xs font-semibold uppercase tracking-wide mb-3"
+                style={{ color: 'var(--text-secondary)' }}>Evidence Stages</div>
+              <div className="space-y-1">
+                {stages.map((st, i) => {
+                  const isActive = i === displayedStageIdx;
+                  return (
+                    <button key={st.stage}
+                      onClick={() => setDisplayedStageIdx(i)}
+                      className="w-full flex items-start gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
+                      style={isActive
+                        ? { backgroundColor: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.25)' }
+                        : { backgroundColor: 'transparent', border: '1px solid transparent' }
+                      }>
+                      <div className="mt-0.5 w-3 h-3 rounded-full flex-shrink-0 border-2 flex items-center justify-center"
+                        style={isActive
+                          ? { borderColor: '#14B8A6', backgroundColor: '#14B8A6' }
+                          : { borderColor: 'var(--border-strong)', backgroundColor: 'transparent' }
+                        }>
+                        {isActive && <div className="w-1 h-1 rounded-full bg-white" />}
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold leading-tight"
+                          style={{ color: isActive ? '#14B8A6' : 'var(--text-primary)' }}>
+                          {st.label}
+                        </div>
+                        <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                          {st.evidence_summary}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {/* Case timeline derived from V2 timestamps */}
           <Card className="p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Case Timeline</div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-3"
+              style={{ color: 'var(--text-secondary)' }}>Case Timeline</div>
             <div className="space-y-0">
-              {DEMO_CASE_TIMELINE.map((entry, i) => (
+              {[
+                complaint ? {
+                  time: shortTime(complaint.incident_timestamp),
+                  label: 'Incident occurred',
+                  desc: `Victim in ${complaint.victim_district}`,
+                } : null,
+                complaint ? {
+                  time: shortTime(complaint.complaint_timestamp),
+                  label: 'Complaint filed',
+                  desc: `${complaint.typology_name ?? complaint.typology_id}`,
+                  isHighlight: true,
+                } : null,
+                ...hops.map((h, i) => ({
+                  time:  shortTime(h.event_timestamp),
+                  label: `Hop ${h.hop_sequence} observed`,
+                  desc:  `${h.from_account} → ${h.to_account}  ·  ${formatAmount(h.amount_transferred)}${h.bank_channel ? '  ·  ' + h.bank_channel : ''}`,
+                })),
+                pred ? {
+                  time: '—',
+                  label: 'TRINETRA prediction',
+                  desc: `${topZoneStr} · ${Math.round(geo?.confidence_score ?? 0)}% confidence`,
+                  isHighlight: true,
+                  isLast: true,
+                } : null,
+              ].filter(Boolean).map((entry: any, i, arr) => (
                 <TimelineEvent
                   key={i}
                   time={entry.time}
                   label={entry.label}
                   desc={entry.desc}
                   isHighlight={entry.isHighlight}
-                  isLast={entry.isLast}
+                  isLast={i === arr.length - 1}
                 />
               ))}
             </div>
           </Card>
         </div>
 
-        {/* ── Center: Prediction Evolution ── */}
+        {/* ── CENTRE: Prediction evolution ────────────────────────────────────── */}
         <div className="col-span-5 space-y-4">
 
-          {/* Sequential Prediction Card */}
-          <div className="rounded-2xl border overflow-hidden shadow-sm" style={{ borderColor: 'rgba(124,92,252,0.2)' }}>
-            {/* Header */}
+          {/* Prediction card */}
+          <div className="rounded-2xl border overflow-hidden shadow-sm"
+            style={{ borderColor: 'rgba(124,92,252,0.2)' }}>
             <div className="ai-gradient px-5 py-4 flex items-center gap-3">
               <SparkleIcon size={16} />
               <div>
-                <div className="text-white font-bold text-sm">Live Prediction Evolution</div>
-                <div className="text-white/65 text-[11px]">Sequential cash-out zone narrowing</div>
+                <div className="text-white font-bold text-sm">Live Prediction</div>
+                <div className="text-white/65 text-[11px]">
+                  {stages[displayedStageIdx]?.evidence_summary ?? 'V2 Evidence'}
+                </div>
               </div>
-              <div className="ml-auto flex items-center gap-2">
+              <div className="ml-auto">
                 <FeatureTag type="usp" />
-                <PrototypeBadge tooltip="Confidence values are prototype simulations. Real model will replace this in integration phase." />
               </div>
             </div>
 
-            {/* Body */}
             <div className="p-5 bg-gradient-to-br from-[#7C5CFC]/5 to-[#4338CA]/3">
-
-              {/* Stage indicator */}
-              <div className="flex items-center gap-2 mb-4">
-                {PREDICTION_EVOLUTION_STEPS.map((s, i) => (
-                  <React.Fragment key={i}>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${
-                      i === predStage
-                        ? 'bg-[#7C5CFC] text-white border-[#7C5CFC]'
-                        : i < predStage
-                        ? 'bg-[#7C5CFC]/10 text-[#7C5CFC] border-[#7C5CFC]/20'
-                        : 'text-[#94A3B8]'
-                    }`}
-                    style={i > predStage ? { backgroundColor: 'var(--surface)', borderColor: 'var(--border)' } : undefined}>
-                      {i < predStage && <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4L3 5.5L6.5 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
-                      {i === 0 ? 'Prior' : i === 3 ? 'Decision' : `Hop ${i}`}
+              {predLoading && (
+                <div className="py-6 text-center text-sm animate-pulse"
+                  style={{ color: 'var(--text-muted)' }}>
+                  Running V2 prediction pipeline…
+                </div>
+              )}
+              {predError && !predLoading && (
+                <div className="py-4 text-center text-xs rounded-xl border"
+                  style={{ color: '#E5484D', backgroundColor: 'var(--risk-critical-bg)', borderColor: 'var(--risk-critical-border)' }}>
+                  Prediction temporarily unavailable — {predError}
+                </div>
+              )}
+              {pred && !predLoading && (
+                <>
+                  {/* WHERE */}
+                  <div className="mb-4">
+                    <div className="text-[10px] font-bold uppercase tracking-wide mb-1"
+                      style={{ color: 'var(--text-muted)' }}>WHERE</div>
+                    <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                      {topZoneStr}
                     </div>
-                    {i < 3 && <div className={`flex-1 h-px ${i < predStage ? 'bg-[#7C5CFC]/30' : ''}`}
-                      style={i >= predStage ? { backgroundColor: 'var(--border)' } : undefined} />}
-                  </React.Fragment>
-                ))}
-              </div>
-
-              {/* Confidence headline */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Current top prediction</div>
-                  <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{currentStep.topZone}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold font-mono" style={{ color: confidenceColor(currentStep.confidence) }}>
-                    {currentStep.confidence}%
-                  </div>
-                  <div
-                    className="text-[10px] font-bold uppercase tracking-wide mt-0.5"
-                    style={{ color: confidenceColor(currentStep.confidence) }}
-                  >
-                    {confidenceLabel(currentStep.confidence)} CONFIDENCE
-                  </div>
-                </div>
-              </div>
-
-              {/* Zone probability list */}
-              <div className="space-y-2 mb-4">
-                <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Zone Probabilities</div>
-                {currentStep.zoneProbabilities.map((zp, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="text-xs w-40 truncate" style={{ color: 'var(--text-secondary)' }}>{zp.zone.district}</div>
-                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border-subtle)' }}>
-                      <div className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${zp.probability}%`,
-                          background: zp.probability >= 75 ? '#E5484D' : zp.probability >= 50 ? '#F97316' : zp.probability >= 30 ? '#F59E0B' : '#14B8A6' }} />
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                      M8 confidence: {Math.round(geo?.confidence_score ?? 0)}%
                     </div>
-                    <span className="text-xs font-mono font-bold w-10 text-right" style={{ color: 'var(--text-primary)' }}>{zp.probability}%</span>
                   </div>
-                ))}
-              </div>
 
-              {/* Registry signal */}
-              {currentStep.registrySignal && (
-                <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 mb-3 fade-in">
-                  <svg className="text-amber-600 flex-shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
-                    <path d="M6 3.5V6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                    <circle cx="6" cy="8.5" r="0.6" fill="currentColor"/>
-                  </svg>
-                  <span className="text-xs text-amber-800">{currentStep.registrySignal}</span>
+                  {/* Top-3 zone probabilities */}
+                  {(geo?.ranked_zones ?? []).slice(0, 3).length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      <div className="text-[10px] font-semibold uppercase"
+                        style={{ color: 'var(--text-muted)' }}>Zone Probabilities</div>
+                      {(geo!.ranked_zones!).slice(0, 3).map((rz, i) => {
+                        const probPct = Math.round(rz.probability * 100);
+                        return (
+                          <div key={rz.zone_id} className="flex items-center gap-2">
+                            <div className="text-xs w-44 truncate"
+                              style={{ color: 'var(--text-secondary)' }}>
+                              {rz.district || rz.zone_name}
+                            </div>
+                            <div className="flex-1 h-1.5 rounded-full overflow-hidden"
+                              style={{ backgroundColor: 'var(--border-subtle)' }}>
+                              <div className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${probPct}%`,
+                                  background: probPct >= 10 ? '#E5484D' : probPct >= 5 ? '#F97316' : '#14B8A6',
+                                }} />
+                            </div>
+                            <span className="text-xs font-mono font-bold w-10 text-right"
+                              style={{ color: 'var(--text-primary)' }}>
+                              {probPct}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* WHEN */}
+                  {p50 !== null && (
+                    <div className="mb-4 p-3 rounded-xl border"
+                      style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
+                      <div className="text-[10px] font-bold uppercase mb-1"
+                        style={{ color: 'var(--text-muted)' }}>WHEN — Estimated Intervention Window</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold font-mono text-purple-600">~{p50} min</span>
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          P50 median
+                        </span>
+                      </div>
+                      {p25 !== null && p75 !== null && (
+                        <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                          P25–P75: {p25}–{p75} min
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* DECISION */}
+              {dec && !predLoading && (
+                <div className="rounded-xl border p-3.5"
+                  style={{ backgroundColor: `${decisionColor}08`, borderColor: `${decisionColor}30` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: decisionColor }} />
+                    <span className="text-xs font-bold uppercase" style={{ color: decisionColor }}>
+                      {decisionLabel}
+                    </span>
+                    <span className="text-[10px] ml-auto font-mono" style={{ color: 'var(--text-muted)' }}>
+                      {decisionConfPct}% confidence
+                    </span>
+                  </div>
+                  {reasons.slice(0, 3).map((r, i) => (
+                    <div key={i} className="flex items-start gap-2 mb-1.5">
+                      <div className="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+                        style={{ backgroundColor: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                        {i + 1}
+                      </div>
+                      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{r}</p>
+                    </div>
+                  ))}
+                  {/* XAI toggle */}
+                  <button onClick={() => setXaiOpen(v => !v)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#7C5CFC] hover:underline mt-2">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M6 3.5V6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                      <circle cx="6" cy="8.5" r="0.6" fill="currentColor"/>
+                    </svg>
+                    Why this decision?
+                  </button>
                 </div>
-              )}
-
-              {/* Persistent risk entity alert */}
-              {currentStep.persistentRiskEntity && (
-                <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200 mb-3 fade-in">
-                  <svg className="text-[#E5484D] flex-shrink-0 mt-0.5" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M6 1L11 10H1L6 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-                    <path d="M6 5V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                    <circle cx="6" cy="9" r="0.5" fill="currentColor"/>
-                  </svg>
-                  <span className="text-xs text-red-800 font-medium">{currentStep.persistentRiskEntity}</span>
-                </div>
-              )}
-
-              {/* Action button */}
-              {predStage < 2 && (
-                <button
-                  onClick={handleNextHop}
-                  className="w-full py-2.5 text-xs font-semibold rounded-xl border border-[#7C5CFC]/30 text-[#7C5CFC] hover:bg-[#7C5CFC]/5 transition-colors flex items-center justify-center gap-2"
-                >
-                  Simulate Next Transaction Hop →
-                </button>
-              )}
-              {predStage === 2 && (
-                <button
-                  onClick={handleNextHop}
-                  className="w-full py-2.5 text-xs font-semibold rounded-xl text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                  style={{ background: 'linear-gradient(135deg, #7C5CFC, #4338CA)' }}
-                >
-                  <SparkleIcon size={11} />
-                  Evaluate Recoverability & Decision →
-                </button>
               )}
             </div>
           </div>
 
-          {/* Decision Card (stage 3) */}
-          {predStage === 3 && (
-            <div className="rounded-2xl border overflow-hidden fade-in" style={{ borderColor: 'rgba(229,72,77,0.25)' }}>
-              <div className="px-5 py-3.5 flex items-center justify-between" style={{ background: 'var(--risk-critical-bg)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#E5484D] pulse-dot" />
-                  <span className="text-sm font-bold text-[#E5484D]">{decision.label}</span>
-                </div>
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Prototype decision logic</span>
-              </div>
-              <div className="p-4 space-y-3" style={{ backgroundColor: 'var(--surface)' }}>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{decision.reason}</p>
-
-                {/* Recoverability */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl border" style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
-                    <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Prediction Confidence</div>
-                    <div className="text-xl font-bold font-mono text-[#10B981]">{decision.confidence}%</div>
-                    <div className="w-full h-1 rounded-full mt-1.5" style={{ backgroundColor: 'var(--border)' }}>
-                      <div className="h-full rounded-full bg-[#10B981]" style={{ width: `${decision.confidence}%` }} />
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-xl border" style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
-                    <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>
-                      Recoverability <PrototypeBadge />
-                    </div>
-                    <div className="text-xl font-bold font-mono text-[#F97316]">{decision.recoverability.score}%</div>
-                    <div className="text-[10px] text-[#F97316] font-semibold mt-0.5">
-                      {decision.recoverability.windowLabel} remaining — ACT NOW
-                    </div>
-                  </div>
-                </div>
-
-                {/* XAI */}
-                <button
-                  onClick={() => setXaiOpen(v => !v)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-[#7C5CFC] hover:underline"
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/><path d="M6 3.5V6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><circle cx="6" cy="8.5" r="0.6" fill="currentColor"/></svg>
-                  Why this prediction?
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`transition-transform ${xaiOpen ? 'rotate-90' : ''}`}><path d="M3 2L7 5L3 8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-                </button>
-                {xaiOpen && (
-                  <div className="space-y-1.5 fade-in">
-                    {factorsToUse.map((f, i) => (
-                      <ConfidenceBar key={i} label={f.label} value={f.weight} color={f.color} />
-                    ))}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="space-y-2 pt-1">
-                  <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#E5484D] text-white text-xs font-semibold hover:bg-[#D43840] transition-colors">
-                    Notify Bank (HDFC)
-                  </button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors"
-                      style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-                      Notify LEA
-                    </button>
-                    <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#14B8A6] text-white text-xs font-semibold hover:bg-[#0F9E8E] transition-colors">
-                      Acknowledge
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Prediction Evolution Chart */}
-          {predStage > 0 && (
+          {/* Prediction evolution chart */}
+          {evolutionChartData.length > 1 && (
             <Card className="p-4 fade-in">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Prediction Evolution</div>
-                <PrototypeBadge />
+                <div className="text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--text-secondary)' }}>Prediction Evolution</div>
               </div>
               <ResponsiveContainer width="100%" height={90}>
                 <LineChart data={evolutionChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
@@ -401,97 +515,103 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
           )}
         </div>
 
-        {/* ── Right: Transaction Trail + Accounts + Outcome ── */}
+        {/* ── RIGHT: Transaction trail + Outcome ──────────────────────────────── */}
         <div className="col-span-4 space-y-4">
 
-          {/* Transaction Trail */}
+          {/* Transaction trail from real V2 hops */}
           <Card className="p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: 'var(--text-secondary)' }}>Transaction Trail</div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-4"
+              style={{ color: 'var(--text-secondary)' }}>
+              Transaction Trail — {hops.length} hop{hops.length !== 1 ? 's' : ''} observed
+            </div>
+
+            {hops.length === 0 && (
+              <div className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>
+                No transaction hops recorded for this case.
+              </div>
+            )}
+
             <div className="space-y-0">
-              {DEMO_CASE_HOPS.map((hop, i) => (
-                <div key={i}>
+              {hops.map((hop, i) => (
+                <div key={hop.hop_id}>
                   {/* From */}
-                  <div className={`flex items-center gap-2.5 py-2 ${hop.isPredicted ? 'opacity-60' : ''}`}>
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${
-                      hop.riskLevel === 'critical' ? 'bg-red-50 text-[#E5484D]' :
-                      hop.riskLevel === 'high'     ? 'bg-orange-50 text-[#F97316]' :
-                      hop.riskLevel === 'medium'   ? 'bg-amber-50 text-[#F59E0B]' :
-                                                     'bg-teal-50 text-[#14B8A6]'
-                    }`}>
-                      {hop.fromLabel.split(' ')[0].slice(0, 3).toUpperCase()}
+                  <div className="flex items-center gap-2.5 py-2">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-teal-50 text-[#14B8A6]">
+                      {hop.hop_sequence === 1 ? 'VCT' : `H${hop.hop_sequence - 1}`}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{hop.fromLabel}</div>
-                      <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>{hop.fromBank} · {hop.fromAccount}</div>
+                      <div className="text-xs font-semibold truncate"
+                        style={{ color: 'var(--text-primary)' }}>
+                        {hop.from_account}
+                      </div>
+                      <div className="text-[10px] font-mono truncate"
+                        style={{ color: 'var(--text-muted)' }}>
+                        {hop.institution ?? '—'}
+                      </div>
                     </div>
                   </div>
 
                   {/* Arrow */}
-                  <div className={`flex items-center gap-2 pl-3.5 ${hop.isPredicted ? 'opacity-60' : ''}`}>
-                    <div className="w-px h-4 bg-[#E2E8F0] ml-3" />
+                  <div className="flex items-center gap-2 pl-3.5">
+                    <div className="w-px h-4 ml-3" style={{ backgroundColor: 'var(--border)' }} />
                     <div className="flex items-center gap-2 ml-1">
-                      <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-white ${
-                        hop.riskLevel === 'critical' ? 'bg-[#E5484D]' :
-                        hop.riskLevel === 'high'     ? 'bg-[#F97316]' : 'bg-[#F59E0B]'
-                      }`}>{hop.amount}</span>
-                      <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>{hop.timestamp}</span>
-                      {hop.isPredicted && (
-                        <span className="text-[9px] font-semibold text-[#7C5CFC] border border-[#7C5CFC]/30 px-1 rounded">PREDICTED</span>
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded text-white bg-[#14B8A6]">
+                        {formatAmount(hop.amount_transferred)}
+                      </span>
+                      <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                        {shortTime(hop.event_timestamp)}
+                      </span>
+                      {hop.bank_channel && (
+                        <span className="text-[9px] px-1 rounded border font-mono"
+                          style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                          {hop.bank_channel}
+                        </span>
                       )}
                     </div>
                   </div>
+
+                  {/* To (last hop → to account) */}
+                  {i === hops.length - 1 && (
+                    <div className="flex items-center gap-2.5 py-2">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-orange-50 text-[#F97316]">
+                        H{hop.hop_sequence}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold truncate"
+                          style={{ color: 'var(--text-primary)' }}>
+                          {hop.to_account}
+                        </div>
+                        <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                          Latest observed
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
-              {/* Final destination */}
-              <div className="flex items-center gap-2.5 py-2 opacity-60">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-50 text-[9px] font-bold text-[#E5484D] flex-shrink-0">
-                  ATM
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-[#E5484D]">Gurugram ATM Cluster</div>
-                  <div className="text-[10px] text-[#94A3B8]">Predicted cash-out zone</div>
-                </div>
-              </div>
-            </div>
-          </Card>
 
-          {/* Linked Accounts */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Linked Accounts</div>
-              <span className="text-[10px] font-medium text-[#14B8A6]">{DEMO_CASE_ACCOUNTS.length} total</span>
-            </div>
-            <div className="space-y-2">
-              {DEMO_CASE_ACCOUNTS.map(a => (
-                <div key={a.accountId}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-colors"
-                  style={{ borderColor: 'var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(20,184,166,0.3)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                >
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: 'var(--surface-secondary)' }}>
-                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="4" width="11" height="7.5" rx="1.5" stroke="#64748B" strokeWidth="1.2"/><path d="M4 4V3C4 2.17 4.67 1.5 5.5 1.5H8.5C9.33 1.5 10 2.17 10 3V4" stroke="#64748B" strokeWidth="1.2"/></svg>
+              {/* Predicted destination */}
+              {pred && (
+                <div className="flex items-center gap-2.5 py-2 opacity-70">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-50 text-[9px] font-bold text-[#E5484D] flex-shrink-0">
+                    PRED
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-bold" style={{ color: 'var(--text-primary)' }}>{a.accountId}</span>
-                      {a.isPersistentRisk && (
-                        <span className="text-[9px] font-bold text-[#E5484D] px-1 rounded" style={{ backgroundColor: 'var(--risk-critical-bg)', border: '1px solid var(--risk-critical-border)' }}>PERSISTENT RISK</span>
-                      )}
+                    <div className="text-xs font-semibold text-[#E5484D]">{topZoneStr}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      Predicted cash-out zone
                     </div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{a.bank} · {a.type}</div>
                   </div>
-                  <RiskBadge level={a.riskLevel} />
                 </div>
-              ))}
+              )}
             </div>
           </Card>
 
           {/* Outcome Feedback */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className="text-xs font-semibold uppercase tracking-wide flex-1" style={{ color: 'var(--text-secondary)' }}>Record Outcome</div>
+              <div className="text-xs font-semibold uppercase tracking-wide flex-1"
+                style={{ color: 'var(--text-secondary)' }}>Record Outcome</div>
               <FeatureTag type="usp" />
             </div>
             {!outcomeSubmitted ? (
@@ -508,7 +628,8 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                         checked={selectedOutcome === o.value}
                         onChange={() => setSelectedOutcome(o.value)}
                         className="accent-[#14B8A6]" />
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{o.label}</span>
+                      <span className="text-xs font-medium"
+                        style={{ color: 'var(--text-primary)' }}>{o.label}</span>
                     </label>
                   ))}
                 </div>
@@ -527,15 +648,19 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                     <path d="M6 9L8 11L12 7" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Outcome Recorded</div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>This feedback will support future model recalibration.</div>
+                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  Outcome Recorded
+                </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  This feedback will support future model recalibration.
+                </div>
               </div>
             )}
           </Card>
         </div>
       </div>
 
-      {/* ── Toast ── */}
+      {/* ── Toast ─────────────────────────────────────────────────────────────── */}
       {toastVisible && (
         <div className="fixed bottom-6 right-6 px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2.5 fade-in z-50"
           style={{ backgroundColor: 'var(--surface-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>

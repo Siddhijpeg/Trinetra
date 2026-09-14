@@ -1,51 +1,56 @@
 import React, { useState } from 'react';
 import { Card, Button, FeatureTag, StatusDot } from '../components/ui';
-import { useCaseContext, getZoneLabel, priorityColor } from '../context/CaseContext';
-import { formatAmountInr } from '../data/caseFixtures';
+import { useCaseContext, getZoneLabel, priorityColor, formatAmountInr } from '../context/CaseContext';
 
 export default function AlertCenter({ onOpenCase }: { onOpenCase?: (caseId?: string) => void }) {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(new Set());
 
-  const { caseFixtures, getFinalPrediction, setActiveCase } = useCaseContext();
+  const { caseList, getFinalPrediction, setActiveCase } = useCaseContext();
 
   const handleOpen = (caseId: string) => {
     setActiveCase(caseId);
     if (onOpenCase) onOpenCase(caseId);
   };
 
-  const alertsDerived = caseFixtures.map(fixture => {
-    const pred = getFinalPrediction(fixture.case_id);
-    const priority = pred?.decision?.priority || 'MEDIUM';
-    const topZoneId = pred?.geographic?.predicted_destination_zone || 'Z000';
-    const zoneName = getZoneLabel(topZoneId);
-    const confidence = Math.round(pred?.decision?.decision_confidence || pred?.geographic?.confidence_score || 50);
-    const dist = pred?.timing?.intervention_distribution;
-    const p50 = dist?.p50_minutes ? Math.round(dist.p50_minutes) : 45;
-    const p25 = dist?.p25_minutes ? Math.round(dist.p25_minutes) : 20;
-    const p75 = dist?.p75_minutes ? Math.round(dist.p75_minutes) : 75;
-    const amount = fixture.complaint.amount_inr;
-    const isAck = acknowledgedIds.has(fixture.case_id);
+  const alertsDerived = caseList.map(item => {
+    const pred     = getFinalPrediction(item.case_id);
+    // V2 decision: dec.decision ("CRITICAL"|"REVIEW"|"MONITOR"), dec.decision_confidence (0-1)
+    const decision  = pred?.decision?.decision || 'MONITOR';
+    const topZoneId = pred?.geographic?.predicted_destination_zone || '';
+    // Prefer inline zone metadata from ranked_zones, fall back to zone ID
+    const rz0       = pred?.geographic?.ranked_zones?.[0];
+    const zoneName  = rz0
+      ? (rz0.district || rz0.zone_name || rz0.zone_id)
+      : (getZoneLabel(topZoneId) || '—');
+    const confidence = Math.round((pred?.decision?.decision_confidence ?? 0) * 100);
+    const dist  = pred?.timing?.intervention_distribution;
+    const p50   = dist?.p50_minutes ? Math.round(dist.p50_minutes) : 45;
+    const p25   = dist?.p25_minutes ? Math.round(dist.p25_minutes) : 20;
+    const p75   = dist?.p75_minutes ? Math.round(dist.p75_minutes) : 75;
+    const amount = item.amount_inr;
+    const isAck  = acknowledgedIds.has(item.case_id);
+    const reasons = pred?.decision?.reasons ?? [];
 
     return {
-      alertId: `ALT-${fixture.case_id.slice(-5)}`,
-      caseId: fixture.case_id,
-      priority,
+      alertId:        `ALT-${item.case_id.slice(-5)}`,
+      caseId:         item.case_id,
+      decision,
       zoneName,
       confidence,
-      windowStr: `~${p50} min (${p25}–${p75} min)`,
+      windowStr:      `~${p50} min (${p25}–${p75} min)`,
       p50,
       amount,
-      reportedAgo: fixture.reportedAgo,
+      reportedAgo:    item.complaint_available_timestamp?.slice(0, 16) ?? '—',
       isAck,
-      reason: pred?.decision?.recommended_action || 'Priority assessment based on spatial & temporal risk',
-      timelineSteps: ['Complaint Intake', 'Hop 1 Ingestion', 'M8 Zone Inferred', 'Intervention Window Active'],
-      completedSteps: fixture.hops.length + 1,
+      reason:         reasons[0] ?? 'Assessment based on geographic and temporal model signals.',
+      timelineSteps:  ['Complaint Intake', 'Hop Ingestion', 'M8 Zone Inferred', 'Intervention Window Active'],
+      completedSteps: item.hop_count + 1,
     };
   });
 
   const filtered = alertsDerived.filter(a => {
-    if (activeTab === 'critical') return a.priority === 'CRITICAL';
+    if (activeTab === 'critical') return a.decision === 'CRITICAL';
     if (activeTab === 'unacknowledged') return !a.isAck;
     if (activeTab === 'acknowledged') return a.isAck;
     return true;
@@ -55,7 +60,7 @@ export default function AlertCenter({ onOpenCase }: { onOpenCase?: (caseId?: str
 
   const statusTabs = [
     { id: 'all', label: 'All Alerts', count: alertsDerived.length },
-    { id: 'critical', label: 'Critical Priority', count: alertsDerived.filter(a => a.priority === 'CRITICAL').length },
+    { id: 'critical', label: 'Critical Priority', count: alertsDerived.filter(a => a.decision === 'CRITICAL').length },
     { id: 'unacknowledged', label: 'Unacknowledged', count: alertsDerived.filter(a => !a.isAck).length },
     { id: 'acknowledged', label: 'Acknowledged', count: alertsDerived.filter(a => a.isAck).length },
   ];
@@ -103,7 +108,7 @@ export default function AlertCenter({ onOpenCase }: { onOpenCase?: (caseId?: str
       {/* Alert cards */}
       <div className="space-y-4">
         {filtered.map(alert => {
-          const color = priorityColor(alert.priority);
+          const color = priorityColor(alert.decision);
 
           return (
             <Card key={alert.alertId} className="overflow-hidden">
@@ -112,7 +117,7 @@ export default function AlertCenter({ onOpenCase }: { onOpenCase?: (caseId?: str
                 style={{ backgroundColor: `${color}08`, borderColor: 'var(--border-subtle)' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full pulse-dot" style={{ background: color }} />
-                  <span className="text-xs font-bold tracking-wide font-mono" style={{ color }}>{alert.priority} CASHOUT RISK</span>
+                  <span className="text-xs font-bold tracking-wide font-mono" style={{ color }}>{alert.decision} CASHOUT RISK</span>
                   <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{alert.alertId}</span>
                 </div>
                 <div className="flex items-center gap-2">

@@ -27,16 +27,29 @@ ART_DIR   = os.path.join(ROOT, "artifacts/models/timing_v2")
 _hazard_model  = None
 _aft_model     = None
 _quantile_model = None
+_quantile_available = False   # False when pkl is incompatible with installed sklearn
 
 
 def _load_models():
-    global _hazard_model, _aft_model, _quantile_model
+    global _hazard_model, _aft_model, _quantile_model, _quantile_available
     with open(os.path.join(ART_DIR, "dynamic_hazard.pkl"), "rb") as f:
         _hazard_model = pickle.load(f)
     with open(os.path.join(ART_DIR, "aft_model.pkl"), "rb") as f:
         _aft_model = pickle.load(f)
-    with open(os.path.join(ART_DIR, "quantile_model.pkl"), "rb") as f:
-        _quantile_model = pickle.load(f)
+    # Quantile model requires scikit-learn >= 1.5.0 (uses _loss internal module).
+    # Degrade gracefully if the pkl is incompatible with the installed version.
+    try:
+        with open(os.path.join(ART_DIR, "quantile_model.pkl"), "rb") as f:
+            _quantile_model = pickle.load(f)
+        _quantile_available = True
+    except Exception as qe:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            f"Timing V2: quantile_model.pkl could not be loaded ({type(qe).__name__}: {qe}). "
+            "Companion quantile estimates will be omitted; primary hazard-curve quantiles remain active."
+        )
+        _quantile_model    = None
+        _quantile_available = False
 
 
 def estimate_intervention_window(
@@ -76,10 +89,18 @@ def estimate_intervention_window(
     # 2. AFT companion
     aft_pred = float(_aft_model.predict(X)[0])
 
-    # 3. Direct quantile companion
-    q_preds  = _quantile_model.predict(X)
-    direct_q = {f"p{int(q*100)}_minutes": float(round(q_preds[q][0], 1))
-                for q in sorted(q_preds.keys())}
+    # 3. Direct quantile companion (only if model loaded successfully)
+    if _quantile_available and _quantile_model is not None:
+        q_preds  = _quantile_model.predict(X)
+        direct_q = {f"p{int(q*100)}_minutes": float(round(q_preds[q][0], 1))
+                    for q in sorted(q_preds.keys())}
+    else:
+        # Fall back to hazard-curve quantiles as the companion estimate
+        direct_q = {
+            "p25_minutes": float(round(primary_q["p25_minutes"], 1)),
+            "p50_minutes": float(round(primary_q["p50_minutes"], 1)),
+            "p75_minutes": float(round(primary_q["p75_minutes"], 1)),
+        }
 
     uncertainty = {
         "lower_minutes": float(round(primary_q["p25_minutes"], 1)),
@@ -101,7 +122,11 @@ def estimate_intervention_window(
             "aft": {"expected_minutes": float(round(aft_pred, 1))},
             "direct_quantiles": direct_q,
         },
-        "model_version": "Time-to-Event v2.0 (Dynamic Hazard + AFT + Quantile, V2 Dataset)",
+        "model_version": (
+            "Time-to-Event v2.0 (Dynamic Hazard + AFT + Quantile, V2 Dataset)"
+            if _quantile_available
+            else "Time-to-Event v2.0 (Dynamic Hazard + AFT, V2 Dataset; quantile companion unavailable)"
+        ),
     }
     if sla_result:
         result["operational_sla"] = sla_result

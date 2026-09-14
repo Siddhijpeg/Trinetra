@@ -26,7 +26,7 @@ export default function AICopilot() {
     {
       id: 'msg-1',
       sender: 'bot',
-      text: "Welcome Officer. I am TRINETRA's AI Copilot powered directly by Google Gemini. Ask me any question regarding active NCRP cases or spatial risk predictions.",
+      text: "Welcome Officer. I am TRINETRA's AI Copilot. Ask me any question regarding active NCRP cases or spatial risk predictions.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -78,7 +78,7 @@ export default function AICopilot() {
             id: (Date.now() + 1).toString(),
             sender: 'bot',
             text: response.text,
-            sources: [{ label: 'Google Gemini Engine', type: 'gemini' }],
+            sources: [{ label: 'AI Copilot Engine', type: 'ai' }],
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
@@ -93,7 +93,7 @@ export default function AICopilot() {
         {
           id: (Date.now() + 1).toString(),
           sender: 'bot',
-          text: `❌ Gemini API Error: ${errorMessage}`,
+          text: `❌ AI Copilot Error: ${errorMessage}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -107,16 +107,20 @@ export default function AICopilot() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md"
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold shadow-md"
             style={{ backgroundColor: 'var(--text-primary)' }}>
-            /
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="9" cy="9" r="7.5" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5"/>
+              <path d="M5.5 9.5L7.5 11.5L12.5 6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="9" cy="9" r="2.5" fill="currentColor" fillOpacity="0.15"/>
+            </svg>
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>AI Investigator Copilot</h1>
               <FeatureTag type="usp" />
             </div>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Connected directly via Google GenAI SDK.</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>TRINETRA AI Copilot — live case intelligence.</p>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5"

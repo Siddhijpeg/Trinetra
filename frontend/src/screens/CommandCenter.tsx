@@ -7,8 +7,7 @@ import { MapContainer, TileLayer, CircleMarker, Tooltip as LeafletTooltip } from
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Card, FeatureTag, SparkleIcon } from '../components/ui';
-import { useCaseContext, getZoneLabel, priorityColor } from '../context/CaseContext';
-import { formatAmountInr } from '../data/caseFixtures';
+import { useCaseContext, getZoneLabel, priorityColor, formatAmountInr } from '../context/CaseContext';
 import { useTheme } from '../context/ThemeContext';
 
 // Fix for Leaflet default icon in Vite environment
@@ -57,7 +56,7 @@ const riskColors: Record<string, string> = {
 export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: string) => void }) {
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>('gurugram');
   const selected = hotspots.find(h => h.id === selectedHotspot);
-  const { getFinalPrediction, isLoadingFinal, caseFixtures, setActiveCase } = useCaseContext();
+  const { getFinalPrediction, isLoadingFinal, caseList, setActiveCase } = useCaseContext();
   const { theme } = useTheme();
 
   const handleOpenCaseItem = (caseId: string) => {
@@ -65,15 +64,16 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: s
     if (onOpenCase) onOpenCase(caseId);
   };
 
-  const loadedPredictions = caseFixtures.map(f => getFinalPrediction(f.case_id)).filter(Boolean);
-  const criticalCount = loadedPredictions.filter(p => p!.decision.priority === 'CRITICAL').length || 3;
-  const highCount = loadedPredictions.filter(p => p!.decision.priority === 'HIGH').length || 2;
-  const priorityInterventions = criticalCount + highCount;
+  const loadedPredictions = caseList.map(item => getFinalPrediction(item.case_id)).filter(Boolean);
+  // V2 decision field is dec.decision ("CRITICAL"|"REVIEW"|"MONITOR"), not dec.priority
+  const criticalCount = loadedPredictions.filter(p => p!.decision.decision === 'CRITICAL').length || 3;
+  const reviewCount   = loadedPredictions.filter(p => p!.decision.decision === 'REVIEW').length || 2;
+  const priorityInterventions = criticalCount + reviewCount;
   const totalAtRisk = loadedPredictions.reduce((sum, p) => sum + (p!.financial_exposure.amount_at_risk_inr || 0), 0) || 1810000;
 
-  const priorityCasesSorted = caseFixtures
-    .map(f => ({ fixture: f, pred: getFinalPrediction(f.case_id) }))
-    .filter(({ pred }) => pred && (pred.decision.priority === 'CRITICAL' || pred.decision.priority === 'HIGH'))
+  const priorityCasesSorted = caseList
+    .map(item => ({ item, pred: getFinalPrediction(item.case_id) }))
+    .filter(({ pred }) => pred && (pred.decision.decision === 'CRITICAL' || pred.decision.decision === 'REVIEW'))
     .sort((a, b) => a.pred!.timing.intervention_distribution.p50_minutes - b.pred!.timing.intervention_distribution.p50_minutes)
     .slice(0, 4);
 
@@ -134,16 +134,16 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: s
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <MetricCard title="ACTIVE CASES" value={String(caseFixtures.filter(f => f.status === 'Active').length || 4)}
-          delta={`${caseFixtures.length} prototype cases loaded`} iconBg="#FEE2E2" iconColor="#E5484D" icon={<CasesIcon />}
+        <MetricCard title="ACTIVE CASES" value={String(caseList.length || 0)}
+          delta={`${caseList.length} cases on current page`} iconBg="#FEE2E2" iconColor="#E5484D" icon={<CasesIcon />}
           sparkColor="#3B82F6" sparkData={sparkActiveCases} />
         <MetricCard title="AMOUNT AT RISK"
           value={loadedPredictions.length > 0 ? formatAmountInr(totalAtRisk) : '₹18.1L'}
           delta="Across loaded cases" iconBg="#FEE2E2" iconColor="#E5484D" icon={<RupeeIcon />}
           sparkColor="#10B981" sparkData={sparkAmountRisk} />
-        <MetricCard title="CRITICAL PRIORITY" value={String(criticalCount)} delta="Auto-alert recommended"
+        <MetricCard title="CRITICAL PRIORITY" value={String(criticalCount)} delta="CRITICAL ALERT decision"
           iconBg="#FEE2E2" iconColor="#E5484D" icon={<ZoneIcon />} sparkColor="#E5484D" sparkData={sparkCriticalPriority} />
-        <MetricCard title="PRIORITY INTERVENTIONS" value={String(priorityInterventions || 5)} delta="HIGH or CRITICAL"
+        <MetricCard title="PRIORITY INTERVENTIONS" value={String(priorityInterventions || 5)} delta="CRITICAL or REVIEW"
           iconBg="#FEF3C7" iconColor="#F59E0B" icon={<AlertIcon />} sparkColor="#F59E0B" sparkData={sparkPriorityInterventions} />
       </div>
 
@@ -245,7 +245,10 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: s
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => handleOpenCaseItem('NCRP-26-81942')}
+                  <button onClick={() => {
+                    const firstCaseId = caseList[0]?.case_id;
+                    if (firstCaseId) handleOpenCaseItem(firstCaseId);
+                  }}
                     className="w-full py-2.5 text-xs font-semibold text-white rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-1 cursor-pointer shadow-sm"
                     style={{ background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)' }}>
                     Open Case →
@@ -275,18 +278,23 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: s
           <div className="flex-1 p-3.5 space-y-2.5 overflow-y-auto">
             {priorityCasesSorted.length === 0 && (
               <div className="flex items-center justify-center h-32 text-xs" style={{ color: 'var(--text-muted)' }}>
-                {isLoadingFinal(caseFixtures[0]?.case_id) ? 'Evaluating predictions…' : 'No HIGH/CRITICAL cases'}
+                {isLoadingFinal(caseList[0]?.case_id) ? 'Evaluating predictions…' : 'No CRITICAL/REVIEW cases on current page'}
               </div>
             )}
-            {priorityCasesSorted.map(({ fixture, pred }) => {
+            {priorityCasesSorted.map(({ item, pred }) => {
               const p50 = Math.round(pred!.timing.intervention_distribution.p50_minutes);
-              const priority = pred!.decision.priority;
+              // V2: decision label is pred.decision.decision, confidence is 0–1 float
+              const decisionLabel = pred!.decision.decision;
               const atRisk = pred!.financial_exposure.amount_at_risk_inr;
-              const zone = getZoneLabel(pred!.geographic.predicted_destination_zone);
-              const color = priorityColor(priority);
+              // Zone display: prefer ranked_zones[0] metadata, fall back to zone ID lookup
+              const rz0 = pred!.geographic.ranked_zones?.[0];
+              const zone = rz0
+                ? (rz0.district || rz0.zone_name || rz0.zone_id)
+                : getZoneLabel(pred!.geographic.predicted_destination_zone);
+              const color = priorityColor(decisionLabel);
               return (
-                <div key={fixture.case_id}
-                  onClick={() => handleOpenCaseItem(fixture.case_id)}
+                <div key={item.case_id}
+                  onClick={() => handleOpenCaseItem(item.case_id)}
                   className="p-3.5 rounded-xl border transition-all cursor-pointer group flex items-center justify-between"
                   style={{ borderColor: 'var(--border)', backgroundColor: 'transparent' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(20,184,166,0.4)'; (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--surface-hover)'; }}
@@ -300,7 +308,7 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: s
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <div className="font-mono text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{fixture.case_id}</div>
+                      <div className="font-mono text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{item.case_id}</div>
                       <div className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{formatAmountInr(atRisk)} at risk · {zone}</div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#94A3B8" strokeWidth="1.1"/><path d="M5 2.5V5L6.5 6.5" stroke="#94A3B8" strokeWidth="1.1" strokeLinecap="round"/></svg>
@@ -310,7 +318,7 @@ export default function CommandCenter({ onOpenCase }: { onOpenCase?: (caseId?: s
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full uppercase"
-                      style={{ color, backgroundColor: `${color}15`, border: `1px solid ${color}30` }}>{priority}</span>
+                      style={{ color, backgroundColor: `${color}15`, border: `1px solid ${color}30` }}>{decisionLabel}</span>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ color: 'var(--text-muted)' }}>
                       <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
