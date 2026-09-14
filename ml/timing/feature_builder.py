@@ -42,8 +42,7 @@ class TimeToEventFeatureBuilder:
         features["elapsed_since_first_txn"] = elapsed_since_first_txn
         features["elapsed_since_prev_txn"] = elapsed_since_prev_txn
         
-        # Time of day / Day of week of the prediction time (or last known activity)
-        # Using prediction time models the current operational context
+        # Time of day / Day of week of the prediction time
         features["prediction_hour"] = float(ctx.prediction_time.hour)
         features["prediction_dayofweek"] = float(ctx.prediction_time.weekday())
         
@@ -64,31 +63,7 @@ class TimeToEventFeatureBuilder:
             features["has_complaint"] = 0.0
             features["elapsed_since_incident"] = 0.0
             features["amount_retained_ratio"] = 0.0
-            
-        # 3. OPTIONAL SEQUENCE/REGISTRY FEATURES
-        # In a real system we'd look up the registry for the destination entity
-        features["to_account_historical_flags"] = 0.0
-        features["registry_flagged_entity"] = 0.0
-        
-        if hop_count > 0:
-            last_txn = ctx.observed_transactions[-1]
-            if last_txn.destination_entity:
-                dest_id = last_txn.destination_entity.entity_id
-                # If we have a registry context injected, use it
-                if dest_id in ctx.registry_context:
-                    reg = ctx.registry_context[dest_id]
-                    features["to_account_historical_flags"] = float(reg.get("historical_sightings", 0))
-                    # Optional: M8 reliability
-                    features["m8_reliability"] = float(reg.get("reliability", 0.0))
-                    # Flag from authorized historical registry
-                    features["registry_flagged_entity"] = float(reg.get("flagged_entity", 0.0))
-                else:
-                    features["m8_reliability"] = 0.0
 
-        # Add explicit zeroes for any missing expected features if needed
-        # (XGBoost can handle missing natively if we pass NaN, but returning a dict 
-        # allows easy conversion to DataFrame)
-        
         return features
 
     def get_feature_names(self):
@@ -104,7 +79,4 @@ class TimeToEventFeatureBuilder:
             "has_complaint",
             "elapsed_since_incident",
             "amount_retained_ratio",
-            "to_account_historical_flags",
-            "registry_flagged_entity",
-            "m8_reliability"
         ]

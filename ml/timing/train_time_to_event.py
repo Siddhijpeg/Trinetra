@@ -54,9 +54,6 @@ FEATURE_COLS = [
     "has_complaint",
     "elapsed_since_incident",
     "amount_retained_ratio",
-    "to_account_historical_flags",
-    "registry_flagged_entity",
-    "m8_reliability",
 ]
 
 # ─── Data loading ─────────────────────────────────────────────────────────────
@@ -80,108 +77,113 @@ def build_snapshots(cmps: pd.DataFrame, hops: pd.DataFrame, couts: pd.DataFrame)
     available_time <= prediction_time (leakage prevention).
 
     Snapshot times:
-      T0  : 10 minutes before the first hop's available_timestamp
+      T0  : 10 minutes before the first hop's event_timestamp
       T1  : 1 second after hop 1's available_timestamp
       T2  : 1 second after hop 2's available_timestamp (if exists)
+      T3  : 1 second after hop 3's available_timestamp (if exists)
     """
-    # Sort hops by available time
-    hops = hops.sort_values(["complaint_id", "available_timestamp"])
+    # 1. Hop snapshot candidate times: available_timestamp + 1s (where prediction_time < cashout_time)
+    hops_m = hops.merge(couts[["complaint_id", "event_timestamp"]].rename(columns={"event_timestamp": "cashout_time"}), on="complaint_id")
+    hops_m["prediction_time"] = hops_m["available_timestamp"] + timedelta(seconds=1)
+    hops_m = hops_m[hops_m["prediction_time"] < hops_m["cashout_time"]].copy()
 
-    # Compute running cumulative stats per case
-    hops["hop_count"]            = hops.groupby("complaint_id").cumcount() + 1
-    hops["cumulative_amount"]    = hops.groupby("complaint_id")["amount_transferred"].cumsum()
-    hops["current_txn_amount"]   = hops["amount_transferred"]
+    # Limit to earliest MAX_SNAPSHOTS available_timestamp snapshot times per complaint
+    hops_m = hops_m.sort_values(["complaint_id", "available_timestamp"])
+    hops_m["snap_order"] = hops_m.groupby("complaint_id").cumcount() + 1
+    hop_snaps = hops_m[hops_m["snap_order"] <= MAX_SNAPSHOTS][["complaint_id", "prediction_time", "cashout_time"]].copy()
 
-    # Time-based features from hop perspective
-    first_hop_times = hops.groupby("complaint_id")["event_timestamp"].transform("first")
-    prev_hop_times  = hops.groupby("complaint_id")["event_timestamp"].shift(1)
+    # 2. T0 snapshot: min(event_timestamp) - 10m
+    t0 = hops.groupby("complaint_id")["event_timestamp"].min().reset_index()
+    t0 = t0.merge(couts[["complaint_id", "event_timestamp"]].rename(columns={"event_timestamp": "cashout_time"}), on="complaint_id")
+    t0["prediction_time"] = t0["event_timestamp"] - timedelta(minutes=10)
+    t0 = t0[t0["prediction_time"] < t0["cashout_time"]][["complaint_id", "prediction_time", "cashout_time"]].copy()
 
-    hops["first_event_timestamp"] = first_hop_times
-    hops["prev_event_timestamp"]  = prev_hop_times
+    # Combine unique candidate snapshots
+    snaps = pd.concat([t0, hop_snaps], ignore_index=True).drop_duplicates(subset=["complaint_id", "prediction_time"])
 
-    # Merge complaint context
-    cmps_slim = cmps[["complaint_id", "incident_timestamp", "amount_inr",
-                       "typology_id"]].copy()
-    hops = hops.merge(cmps_slim, on="complaint_id", how="left")
+    # 3. As-of-time hop feature join
+    merged = snaps.merge(
+        hops[["complaint_id", "event_timestamp", "available_timestamp", "amount_transferred"]],
+        on="complaint_id",
+        how="left"
+    )
+    avail_hops = merged[merged["available_timestamp"] <= merged["prediction_time"]].copy()
 
-    # Merge cashout time (label only — never in feature vector)
-    hops = hops.merge(couts[["complaint_id", "event_timestamp"]].rename(
-        columns={"event_timestamp": "cashout_time"}), on="complaint_id", how="left")
+    if not avail_hops.empty:
+        # Sort chronologically by event_timestamp within each snapshot context
+        avail_hops = avail_hops.sort_values(["complaint_id", "prediction_time", "event_timestamp"])
+        grp = avail_hops.groupby(["complaint_id", "prediction_time"])
 
-    # Only keep hops where the snapshot prediction would precede the cashout
-    snap_time = hops["available_timestamp"] + timedelta(seconds=1)
-    hops = hops[snap_time < hops["cashout_time"]].copy()
+        avail_hops["hop_count"] = grp.cumcount() + 1
+        avail_hops["cumulative_amount"] = grp["amount_transferred"].cumsum()
+        avail_hops["first_event_timestamp"] = grp["event_timestamp"].transform("first")
+        avail_hops["prev_event_timestamp"] = grp["event_timestamp"].shift(1)
+        avail_hops.loc[avail_hops["hop_count"] == 1, "prev_event_timestamp"] = pd.NaT
 
-    # ── Build features ──
-    hops["prediction_time"] = snap_time[hops.index]
+        snap_hop_feats = avail_hops.groupby(["complaint_id", "prediction_time"]).last().reset_index()
+        res = snaps.merge(
+            snap_hop_feats[[
+                "complaint_id", "prediction_time", "hop_count", "cumulative_amount",
+                "amount_transferred", "event_timestamp", "first_event_timestamp", "prev_event_timestamp"
+            ]],
+            on=["complaint_id", "prediction_time"],
+            how="left"
+        )
+    else:
+        res = snaps.copy()
+        for c in ["hop_count", "cumulative_amount", "amount_transferred", "event_timestamp", "first_event_timestamp", "prev_event_timestamp"]:
+            res[c] = np.nan
 
-    hops["elapsed_since_first_txn"] = (
-        hops["prediction_time"] - hops["first_event_timestamp"]
-    ).dt.total_seconds() / 60.0
+    # Fill default hop values for T0 snapshots
+    res["hop_count"] = res["hop_count"].fillna(0.0)
+    res["cumulative_amount"] = res["cumulative_amount"].fillna(0.0)
+    res["current_txn_amount"] = res["amount_transferred"].fillna(0.0)
 
-    hops["elapsed_since_prev_txn"] = (
-        hops["event_timestamp"] - hops["prev_event_timestamp"]
-    ).dt.total_seconds().fillna(0.0) / 60.0
-
-    hops["prediction_hour"]       = hops["prediction_time"].dt.hour.astype(float)
-    hops["prediction_dayofweek"]  = hops["prediction_time"].dt.dayofweek.astype(float)
-
-    hops["elapsed_since_incident"] = (
-        hops["prediction_time"] - hops["incident_timestamp"]
-    ).dt.total_seconds() / 60.0
-
-    hops["has_complaint"] = 1.0
-    hops["amount_retained_ratio"] = (
-        hops["current_txn_amount"] / (hops["amount_inr"] + 1e-5)
+    res["elapsed_since_first_txn"] = np.where(
+        res["first_event_timestamp"].notna(),
+        (res["prediction_time"] - res["first_event_timestamp"]).dt.total_seconds() / 60.0,
+        0.0
+    )
+    res["elapsed_since_prev_txn"] = np.where(
+        res["prev_event_timestamp"].notna(),
+        (res["event_timestamp"] - res["prev_event_timestamp"]).dt.total_seconds() / 60.0,
+        0.0
     )
 
-    # Registry features — zeroed for now (injected at inference from actual registry)
-    hops["to_account_historical_flags"] = 0.0
-    hops["registry_flagged_entity"]     = 0.0
-    hops["m8_reliability"]              = 0.0
+    res["prediction_hour"]      = res["prediction_time"].dt.hour.astype(float)
+    res["prediction_dayofweek"] = res["prediction_time"].dt.dayofweek.astype(float)
 
-    # ── Build target ──
-    hops["remaining_minutes"] = (
-        hops["cashout_time"] - hops["prediction_time"]
-    ).dt.total_seconds() / 60.0
+    # 4. As-of-time complaint feature join
+    cmps_slim = cmps[["complaint_id", "incident_timestamp", "available_timestamp", "amount_inr"]].rename(
+        columns={"available_timestamp": "cmp_available_timestamp"}
+    ).copy()
+    res = res.merge(cmps_slim, on="complaint_id", how="left")
 
-    hops["event_observed"]      = True
-    hops["lower_bound_minutes"] = hops["remaining_minutes"].clip(lower=0.0)
-    hops["upper_bound_minutes"] = hops["lower_bound_minutes"]
-    hops["exact_minutes"]       = hops["lower_bound_minutes"]
+    cmp_avail = (res["prediction_time"] >= res["cmp_available_timestamp"]) & res["cmp_available_timestamp"].notna()
+    res["has_complaint"] = cmp_avail.astype(float)
+    res["elapsed_since_incident"] = np.where(
+        cmp_avail,
+        (res["prediction_time"] - res["incident_timestamp"]).dt.total_seconds() / 60.0,
+        0.0
+    )
+    res["amount_retained_ratio"] = np.where(
+        cmp_avail & (res["amount_inr"] > 0),
+        res["current_txn_amount"] / (res["amount_inr"] + 1e-5),
+        0.0
+    )
 
-    # ── T0 snapshots (before any hop is visible) ──
-    t0 = hops.groupby("complaint_id").first().reset_index()
-    t0["prediction_time"]     = t0["first_event_timestamp"] - timedelta(minutes=10)
-    t0 = t0[t0["prediction_time"] < t0["cashout_time"]].copy()
+    # 5. Targets
+    res["remaining_minutes"] = (res["cashout_time"] - res["prediction_time"]).dt.total_seconds() / 60.0
+    res["event_observed"]      = True
+    res["lower_bound_minutes"] = res["remaining_minutes"].clip(lower=0.0)
+    res["upper_bound_minutes"] = res["lower_bound_minutes"]
+    res["exact_minutes"]       = res["lower_bound_minutes"]
 
-    t0["hop_count"]                    = 0.0
-    t0["cumulative_amount"]            = 0.0
-    t0["current_txn_amount"]           = 0.0
-    t0["elapsed_since_first_txn"]      = 0.0
-    t0["elapsed_since_prev_txn"]       = 0.0
-    t0["prediction_hour"]              = t0["prediction_time"].dt.hour.astype(float)
-    t0["prediction_dayofweek"]         = t0["prediction_time"].dt.dayofweek.astype(float)
-    t0["has_complaint"]                = 0.0
-    t0["elapsed_since_incident"]       = 0.0
-    t0["amount_retained_ratio"]        = 0.0
-    t0["to_account_historical_flags"]  = 0.0
-    t0["registry_flagged_entity"]      = 0.0
-    t0["m8_reliability"]               = 0.0
+    all_cols = ["complaint_id", "prediction_time"] + FEATURE_COLS + [
+        "remaining_minutes", "event_observed", "lower_bound_minutes", "upper_bound_minutes", "exact_minutes"
+    ]
 
-    t0["remaining_minutes"]   = (t0["cashout_time"] - t0["prediction_time"]).dt.total_seconds() / 60.0
-    t0["event_observed"]      = True
-    t0["lower_bound_minutes"] = t0["remaining_minutes"].clip(lower=0.0)
-    t0["upper_bound_minutes"] = t0["lower_bound_minutes"]
-    t0["exact_minutes"]       = t0["lower_bound_minutes"]
-
-    # Keep only first MAX_SNAPSHOTS hops per case
-    hops = hops[hops["hop_count"] <= MAX_SNAPSHOTS].copy()
-
-    all_cols = ["complaint_id"] + FEATURE_COLS + ["remaining_minutes", "event_observed",
-                                "lower_bound_minutes", "upper_bound_minutes", "exact_minutes"]
-
-    combined = pd.concat([t0[all_cols], hops[all_cols]], ignore_index=True)
+    combined = res[all_cols].copy()
     combined = combined.dropna(subset=["remaining_minutes"])
     combined = combined[combined["remaining_minutes"] >= 0]
     combined[FEATURE_COLS] = combined[FEATURE_COLS].fillna(0.0)

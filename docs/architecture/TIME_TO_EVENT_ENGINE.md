@@ -1,23 +1,21 @@
 # Production Target: Time-to-Event Engine
 
-## Current Implementation vs Production Target
-**CURRENT IMPLEMENTATION**: The synthetic prototype (`ml/timing/recoverability_models.py`) uses a fully-observed XGBoost log-regression model. Because 100% of the synthetic data reaches a "cash-out" state, classical right-censored survival analysis was bypassed in favor of a simpler regression on the remaining minutes.
+## Implementation Status (Phase 2B — FROZEN)
+The schema-first **Time-to-Event Engine** is fully implemented, audited, and frozen in `ml/timing/`.
 
-**PRODUCTION TARGET**: Real-world data will contain:
-- Cash-outs
-- Frozen funds (successful interventions)
-- Reversals/Recoveries
-- Still-active / censored cases
+**ACTIVE PIPELINE**:
+- **Interface**: `estimate_intervention_window(prediction_context, sla_minutes=None)`
+- **Feature Builder**: `TimeToEventFeatureBuilder` (10 transaction-temporal features, 0 train-serve skew, leak-free as-of-time evaluation)
+- **Primary Engine**: `DynamicHazardModel` (Discrete-time hazard via XGBoost + Isotonic Calibration on Month 5)
+- **Survival Curve**: Generates monotonic $S(t) = \prod (1 - h_k)$ and interpolated P25, P50, P75
+- **Companion Models**: AFT model (`aft_model.py`) and Direct Quantiles (`quantile_model.py`)
+- **Authoritative Dataset Counts**: 22,844 train cases $\to$ 37,851 dynamic snapshots (T0 + Max 3 hops) $\to$ 86,307 person-period rows.
 
-Therefore, the production architecture must support true **survival modeling** and **competing risks**.
-
-## Future Architecture
-The production engine will transition to:
-1. **Dynamic Discrete-Time Hazard Model** or **Accelerated Failure Time (AFT) Model**.
-2. **Survival Curve Generation**: Producing $S(t)$, the probability of "surviving" past time $t$.
-3. **Calibrated Survival Probabilities**: Outputs such as P(Y > 15m), P(Y > 30m) rigorously calibrated on real-world censoring.
-4. **Quantile Prediction**: Outputting the exact P25, Median, and P75 time bounds for the UI.
-5. **Conformal Prediction Intervals**: Providing statistical guarantees around the remaining window.
+## Real-World Production Roadmap
+While Phase 2B implements discrete-time hazard modeling, AFT, and quantile regression on the 40k synthetic harness, future real-world data integration will extend this engine to:
+1. **Competing Risks Modeling**: Multi-state transitions (cashout vs. fund freeze vs. reversal).
+2. **Right-Censored Survival Analysis**: Handling live active cases that haven't hit cashout yet.
+3. **Conformal Prediction Intervals**: Distribution-free coverage guarantees around intervention time.
 
 ## Configurable SLA
-Operational urgency metrics should eventually be driven by a configurable bank/law-enforcement SLA, rather than hardcoded 30-minute thresholds.
+Operational urgency metrics are driven by configurable bank/law-enforcement SLAs passed via `estimate_intervention_window(..., sla_minutes=...)`.

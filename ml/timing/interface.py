@@ -24,7 +24,6 @@ FEATURE_COLS = [
     "elapsed_since_first_txn", "elapsed_since_prev_txn",
     "prediction_hour", "prediction_dayofweek",
     "has_complaint", "elapsed_since_incident", "amount_retained_ratio",
-    "to_account_historical_flags", "registry_flagged_entity", "m8_reliability",
 ]
 
 _hazard_model  = None

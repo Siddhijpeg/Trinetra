@@ -218,7 +218,7 @@ def test_H_missing_optional_fields():
 # ── Test I: Unseen entity still produces a timing prediction ─────────────────
 
 def test_I_unseen_entity_no_crash():
-    """Entity never in registry — inference must still work."""
+    """Entity never seen — inference must still work."""
     hop = _txn(1, delta_event_mins=5, delta_avail_mins=10, dest="ACC_BRAND_NEW_NEVER_SEEN")
     ctx = PredictionContext(
         case_id="CASE_UNSEEN",
@@ -228,9 +228,45 @@ def test_I_unseen_entity_no_crash():
     )
     fb = TimeToEventFeatureBuilder()
     feats = fb.build_features(ctx)
-    # Should still produce features, defaulting unknown registry to 0
-    assert feats["m8_reliability"] == 0.0
     assert isinstance(feats["hop_count"], float)
+    assert feats["hop_count"] == 1.0
+
+# ── Test J: Calibrator Persistence across Process Restarts ───────────────────
+
+def test_J_calibrator_persistence():
+    """
+    Verify that the Month-5 IsotonicRegression calibrator is serialized and reloaded,
+    producing identical calibrated survival probabilities across process restarts.
+    """
+    from ml.timing.interface import estimate_intervention_window, _load_models
+    import ml.timing.interface as timing_interface
+    
+    timing_interface._load_models()
+    assert getattr(timing_interface._hazard_model, "calibrator", None) is not None, "Hazard model calibrator is missing!"
+    
+    hop1 = _txn(1, delta_event_mins=5, delta_avail_mins=10, amount=50000.0)
+    ctx = PredictionContext(
+        case_id="TEST_CALIB",
+        prediction_time=BASE_TIME + timedelta(minutes=15),
+        observed_transactions=[hop1],
+    )
+    
+    res1 = timing_interface.estimate_intervention_window(ctx)
+    curve1 = res1["intervention_distribution"]["survival_curve"]
+    
+    # Simulate backend process restart by clearing cached module models
+    timing_interface._hazard_model = None
+    timing_interface._aft_model = None
+    timing_interface._quantile_model = None
+    
+    res2 = timing_interface.estimate_intervention_window(ctx)
+    curve2 = res2["intervention_distribution"]["survival_curve"]
+    
+    # Assert exact numerical match between pre- and post-restart calibrated predictions
+    assert len(curve1) == len(curve2)
+    for p1, p2 in zip(curve1, curve2):
+        assert p1["minutes"] == p2["minutes"]
+        assert abs(p1["probability_remaining"] - p2["probability_remaining"]) < 1e-6
 
 # ── Schema Robustness: Minimal context (Case 6) ───────────────────────────────
 

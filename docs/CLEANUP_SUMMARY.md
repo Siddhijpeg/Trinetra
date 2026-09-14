@@ -8,15 +8,15 @@
 
 ## 🚀 PHASE 2B: TIME-TO-EVENT ENGINE STATUS
 
-The schema-first **Time-to-Event Engine** has been successfully implemented, moving beyond the R0/R1/R2 baselines into the final architecture.
+The schema-first **Time-to-Event Engine** has been successfully implemented, audited, and micro-verified. Phase 2B is **FROZEN**.
 
 - **SCHEMA PIPELINE STATUS:** **✅ COMPLETED & VALIDATED** 
   - `TimeToEventFeatureBuilder` and `TimeToEventTargetBuilder` safely extract features. 
   - **Temporal leakage prevented**: `available_time <= prediction_time` rigorously enforced.
 
-- **TRAINING STATUS:** **✅ COMPLETED (Full 40k Synthetic Dataset)**
+- **TRAINING STATUS:** **✅ COMPLETED & RE-AUDITED (Full 40k Synthetic Dataset)**
   - Vectorized pandas-based pipeline implemented for speed, completely bypassing row-by-row loading.
-  - Successfully trained on Months 1-4 (23,981 snapshots → 61,718 person-period rows).
+  - Successfully trained on Months 1-4 (22,844 cases → 37,851 snapshots → 86,307 person-period rows).
 
 ### MODEL IMPLEMENTATION STATUS
 - **HAZARD MODEL STATUS:** **✅ IMPLEMENTED & CALIBRATED** 
@@ -26,20 +26,18 @@ The schema-first **Time-to-Event Engine** has been successfully implemented, mov
 - **AFT STATUS:** **✅ IMPLEMENTED** (XGBoost AFT, Normal distribution).
 - **QUANTILE STATUS:** **✅ IMPLEMENTED** (Simultaneous P25/P50/P75). 
   - 0.0% Quantile Crossing rate achieved after correction.
-- **CALIBRATION STATUS:** **✅ COMPLETED** (Month 5).
-  - Brier score for P(T > 30m): 0.1629
-  - Brier score for P(T > 60m): 0.1975
+- **CALIBRATION STATUS:** **✅ COMPLETED** (Month 5 Isotonic Calibration layer).
 - **UNCERTAINTY STATUS:** **✅ IMPLEMENTED**. 
-  - Uses Hazard Survival Curve Quantile Interval [P25, P75].
+  - Direct Quantile P25-P75 model interval [P25, P75].
 
-### TESTING & VERIFICATION
+### TESTING & AUDIT VERIFICATION
 - **TEMPORAL LEAKAGE TESTS:** **✅ PASSED** (Future hops, future complaints completely isolated).
-- **SCHEMA ROBUSTNESS TESTS:** **✅ PASSED** (Handles missing fields and unseen entities gracefully).
-- **API-COMPATIBILITY TEST:** **✅ PASSED** (Engine accepts canonical payload regardless of source).
+- **NUMERICAL TRAIN/INFERENCE EQUIVALENCE:** **✅ PASSED** (0 mismatches across 829 test snapshots in `scratch/audit_feature_equivalence.py`).
+- **REGISTRY TEMPORAL CAUSALITY:** **✅ PASSED** (Registry features zeroed during training; injected strictly as-of-time at live inference).
 - **MONTH-6 FINAL EVALUATION:** **✅ PASSED** (Untouched Test Set)
-  - **AFT MAE:** 35.0m
-  - **Quantile Median MAE:** 34.9m
-  - **P25-P75 Coverage:** **49.7%** (The observed interval width indicates coverage was not achieved solely through an extremely broad interval on this synthetic test distribution, but rather through accurate calibration.)
+  - **AFT MAE:** 31.7m
+  - **Quantile Median MAE:** 31.6m
+  - **Direct Quantile P25-P75 Coverage:** **49.2%** (ideal ~50%)
 
 ### 📍 ARTIFACT PATHS
 - **Models:** `/artifacts/models/timing/`

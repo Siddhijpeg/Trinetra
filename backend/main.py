@@ -2,9 +2,9 @@
 TRINETRA FastAPI Backend
 =========================
 GET  /health
+GET  /api/v1/health
 POST /api/v1/predict
-
-No Decision Engine yet.
+GET  /api/v1/cases
 """
 import os
 import sys
@@ -26,7 +26,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8443", "http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -59,8 +59,9 @@ class PredictRequest(BaseModel):
     sla_minutes: Optional[float] = None
 
 @app.get("/health")
+@app.get("/api/v1/health")
 def health():
-    return {"status": "ok", "service": "TRINETRA Prediction API v2.0"}
+    return {"status": "ok", "service": "TRINETRA Prediction API v2.0", "architecture": "Schema-First Canonical"}
 
 @app.post("/api/v1/predict")
 def predict(request: PredictRequest):
@@ -70,3 +71,20 @@ def predict(request: PredictRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/cases")
+def list_cases():
+    return {
+        "status": "ok",
+        "supported_fixtures": [
+            "NCRP-26-81942",
+            "NCRP-26-81911",
+            "NCRP-26-81895",
+            "NCRP-26-81773",
+            "NCRP-26-81742",
+            "NCRP-26-81631",
+            "NCRP-26-81602"
+        ],
+        "message": "Send POST /api/v1/predict with any case_id and telemetry payload for live inference."
+    }
+

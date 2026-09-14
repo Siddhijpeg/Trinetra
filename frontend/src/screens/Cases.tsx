@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Card, Button, SearchBar, FilterSelect, FeatureTag } from '../components/ui';
-import { MOCK_CASES } from '../data/mockCases';
+import { Card, Button, SearchBar, FilterSelect, FeatureTag, StatusDot } from '../components/ui';
+import { useCaseContext, getZoneLabel, priorityColor } from '../context/CaseContext';
+import { formatAmountInr } from '../data/caseFixtures';
 
 const statusColors: Record<string, string> = {
   'Active': 'bg-red-50 text-red-600 border-red-200',
@@ -9,17 +10,73 @@ const statusColors: Record<string, string> = {
   'Resolved': 'bg-emerald-50 text-emerald-600 border-emerald-200',
 };
 
-export default function Cases({ onOpenCase }: { onOpenCase: () => void }) {
+export default function Cases({ onOpenCase }: { onOpenCase?: (caseId?: string) => void }) {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedFraudType, setSelectedFraudType] = useState('All');
+  const [selectedStatus, setSelectedStatus] = useState('All');
+  const [selectedRisk, setSelectedRisk] = useState('All');
+
+  const { caseFixtures, getFinalPrediction, isLoadingFinal, setActiveCase } = useCaseContext();
+
+  const handleOpen = (caseId: string) => {
+    setActiveCase(caseId);
+    if (onOpenCase) onOpenCase(caseId);
+  };
+
+  // Enhance fixtures with predictions
+  const casesWithPredictions = caseFixtures.map(fixture => {
+    const pred = getFinalPrediction(fixture.case_id);
+    const topZoneId = pred?.geographic?.predicted_destination_zone || 'Z000';
+    const zoneName = getZoneLabel(topZoneId);
+    const riskScore = Math.round(pred?.decision?.decision_confidence || pred?.geographic?.confidence_score || 50);
+    const priority = pred?.decision?.priority || 'MEDIUM';
+    const p50 = pred?.timing?.intervention_distribution?.p50_minutes ? Math.round(pred.timing.intervention_distribution.p50_minutes) : 45;
+    const amount = fixture.complaint.amount_inr;
+
+    return {
+      fixture,
+      pred,
+      zoneName,
+      riskScore,
+      priority,
+      p50,
+      amount,
+    };
+  });
+
+  const criticalCount = casesWithPredictions.filter(c => c.priority === 'CRITICAL').length;
+  const activeCount = caseFixtures.filter(c => c.status === 'Active').length;
+  const reviewCount = caseFixtures.filter(c => c.status === 'In Review').length;
 
   const tabs = [
-    { id: 'all', label: 'All Cases', count: MOCK_CASES.length },
-    { id: 'critical', label: 'Critical', count: MOCK_CASES.filter(c => c.riskLevel === 'critical').length },
-    { id: 'active', label: 'Active', count: MOCK_CASES.filter(c => c.status === 'Active').length },
-    { id: 'reviewing', label: 'In Review', count: MOCK_CASES.filter(c => c.status === 'In Review').length },
-    { id: 'resolved', label: 'Resolved', count: MOCK_CASES.filter(c => c.status === 'Resolved').length },
+    { id: 'all', label: 'All Cases', count: caseFixtures.length },
+    { id: 'critical', label: 'Critical Priority', count: criticalCount },
+    { id: 'active', label: 'Active', count: activeCount },
+    { id: 'reviewing', label: 'In Review', count: reviewCount },
   ];
+
+  const filteredCases = casesWithPredictions.filter(item => {
+    const { fixture, zoneName, priority } = item;
+    if (activeTab === 'critical' && priority !== 'CRITICAL') return false;
+    if (activeTab === 'active' && fixture.status !== 'Active') return false;
+    if (activeTab === 'reviewing' && fixture.status !== 'In Review') return false;
+
+    if (selectedFraudType !== 'All' && fixture.fraudType !== selectedFraudType) return false;
+    if (selectedStatus !== 'All' && fixture.status !== selectedStatus) return false;
+    if (selectedRisk !== 'All' && priority !== selectedRisk.toUpperCase()) return false;
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matchId = fixture.case_id.toLowerCase().includes(q);
+      const matchType = fixture.fraudType.toLowerCase().includes(q);
+      const matchZone = zoneName.toLowerCase().includes(q);
+      const matchVictim = fixture.victimDistrict.toLowerCase().includes(q);
+      if (!matchId && !matchType && !matchZone && !matchVictim) return false;
+    }
+
+    return true;
+  });
 
   return (
     <div className="p-7 space-y-6">
@@ -30,11 +87,13 @@ export default function Cases({ onOpenCase }: { onOpenCase: () => void }) {
             <h1 className="text-[26px] font-bold text-[#0F172A] leading-tight">Cybercrime Cases</h1>
             <FeatureTag type="sih" />
           </div>
-          <p className="text-sm text-[#64748B] leading-relaxed">Investigate complaints and prioritise cases using predictive risk intelligence.</p>
+          <p className="text-sm text-[#64748B] leading-relaxed">
+            Investigate complaints and prioritise cases using real-time predictive risk intelligence.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" icon={<DownloadIcon />} size="sm">Export</Button>
-          <Button variant="primary" icon={<PlusIcon />} size="sm">New Case</Button>
+          <Button variant="secondary" icon={<DownloadIcon />} size="sm">Export CSV</Button>
+          <Button variant="primary" icon={<PlusIcon />} size="sm">New Investigation</Button>
         </div>
       </div>
 
@@ -53,29 +112,55 @@ export default function Cases({ onOpenCase }: { onOpenCase: () => void }) {
             >
               {tab.label}
               <span className={`px-1.5 py-0.5 rounded text-xs ${activeTab === tab.id ? 'bg-[#F1F5F9] text-[#64748B]' : 'bg-[#E2E8F0] text-[#94A3B8]'}`}>
-                {tab.count.toLocaleString()}
+                {tab.count}
               </span>
             </button>
           ))}
         </div>
-        <div className="text-xs text-[#94A3B8] font-mono">Auto-refresh: 30s</div>
+        <div className="flex items-center gap-2 text-xs text-[#94A3B8] font-mono">
+          <StatusDot status="connected" />
+          <span>Live API Connection (Port 8001)</span>
+        </div>
       </div>
 
       {/* Filters */}
       <Card className="p-4">
         <div className="flex items-center gap-3 flex-wrap">
           <SearchBar
-            placeholder="Search case ID, account, phone, UPI…"
+            placeholder="Search case ID, typology, victim district, zone…"
             value={search}
             onChange={setSearch}
             className="w-72"
           />
-          <FilterSelect label="Fraud Type" options={['Investment Fraud', 'UPI Fraud', 'Digital Arrest', 'Impersonation']} />
-          <FilterSelect label="State" options={['Delhi', 'Maharashtra', 'UP', 'Rajasthan', 'Karnataka', 'West Bengal']} />
-          <FilterSelect label="Risk Level" options={['Critical', 'High', 'Medium', 'Low']} />
-          <FilterSelect label="Amount" options={['< ₹1L', '₹1L–5L', '₹5L–20L', '> ₹20L']} />
-          <FilterSelect label="Status" options={['Active', 'In Review', 'Investigating', 'Resolved']} />
-          <button className="ml-auto text-xs text-[#14B8A6] font-medium hover:underline">Reset Filters</button>
+          <FilterSelect
+            label="Fraud Type"
+            value={selectedFraudType}
+            onChange={setSelectedFraudType}
+            options={['All', 'Investment Fraud', 'UPI Fraud', 'Digital Arrest', 'Impersonation']}
+          />
+          <FilterSelect
+            label="Priority"
+            value={selectedRisk}
+            onChange={setSelectedRisk}
+            options={['All', 'Critical', 'High', 'Medium', 'Low']}
+          />
+          <FilterSelect
+            label="Status"
+            value={selectedStatus}
+            onChange={setSelectedStatus}
+            options={['All', 'Active', 'In Review', 'Investigating', 'Resolved']}
+          />
+          <button
+            onClick={() => {
+              setSearch('');
+              setSelectedFraudType('All');
+              setSelectedStatus('All');
+              setSelectedRisk('All');
+            }}
+            className="ml-auto text-xs text-[#14B8A6] font-medium hover:underline"
+          >
+            Reset Filters
+          </button>
         </div>
       </Card>
 
@@ -86,70 +171,82 @@ export default function Cases({ onOpenCase }: { onOpenCase: () => void }) {
             <thead>
               <tr className="border-b border-[#E2E8F0]" style={{ background: '#F8FAFC' }}>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Case ID</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Complaint Type</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Typology</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Reported</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Amount</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Source</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Predicted Zone</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Risk Score</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Amount at Risk</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Victim Origin</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Predicted Destination Zone</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Priority & Confidence</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Status</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-[#64748B] uppercase tracking-wide">Investigator</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
-              {MOCK_CASES.map((c, i) => (
-                <tr
-                  key={c.caseId}
-                  onClick={onOpenCase}
-                  className={`border-b border-[#F1F5F9] hover:bg-[#F7FFFE] cursor-pointer transition-colors ${i % 2 === 0 ? '' : 'bg-[#FAFBFC]'}`}
-                >
-                  <td className="px-5 py-3.5">
-                    <div className="font-mono text-xs font-bold text-[#0F172A]">{c.caseId}</div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className="text-sm text-[#0F172A]">{c.fraudType}</span>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs text-[#64748B] font-mono">{c.reportedAgo}</td>
-                  <td className="px-4 py-3.5">
-                    <span className="text-sm font-semibold text-[#0F172A]">{c.amount}</span>
-                  </td>
-                  <td className="px-4 py-3.5 text-sm text-[#64748B]">{c.sourceLocation}</td>
-                  <td className="px-4 py-3.5">
-                    {c.predictedZone ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.riskLevel === 'critical' ? '#E5484D' : c.riskLevel === 'high' ? '#F97316' : '#F59E0B' }} />
-                        <span className="text-xs font-medium text-[#0F172A]">{c.predictedZone}</span>
-                      </div>
-                    ) : <span className="text-xs text-[#94A3B8]">—</span>}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{
-                          width: `${c.riskScore}%`,
-                          background: c.riskScore > 80 ? '#E5484D' : c.riskScore > 60 ? '#F97316' : c.riskScore > 40 ? '#F59E0B' : '#14B8A6',
-                        }} />
-                      </div>
-                      <span className="font-mono text-xs font-semibold text-[#0F172A]">{c.riskScore}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${statusColors[c.status] || ''}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs text-[#64748B]">{c.investigator}</td>
-                  <td className="px-4 py-3.5">
-                    <button className="text-[#14B8A6] hover:text-[#0D9488] text-xs font-medium">Open →</button>
-                  </td>
-                </tr>
-              ))}
+              {filteredCases.map(({ fixture, zoneName, riskScore, priority, p50, amount }, i) => {
+                const color = priorityColor(priority);
+                const isLoading = isLoadingFinal(fixture.case_id);
+
+                return (
+                  <tr
+                    key={fixture.case_id}
+                    onClick={() => handleOpen(fixture.case_id)}
+                    className={`border-b border-[#F1F5F9] hover:bg-[#F7FFFE] cursor-pointer transition-colors ${i % 2 === 0 ? '' : 'bg-[#FAFBFC]'}`}
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="font-mono text-xs font-bold text-[#0F172A]">{fixture.case_id}</div>
+                      <div className="text-[10px] text-[#94A3B8]">{fixture.hops.length} hop(s)</div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="text-sm font-medium text-[#0F172A]">{fixture.fraudType}</span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-[#64748B] font-mono">{fixture.reportedAgo}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="text-sm font-semibold text-[#0F172A] font-mono">{formatAmountInr(amount)}</span>
+                    </td>
+                    <td className="px-4 py-3.5 text-sm text-[#64748B]">{fixture.victimDistrict}</td>
+                    <td className="px-4 py-3.5">
+                      {isLoading ? (
+                        <span className="text-xs text-[#94A3B8] animate-pulse">Calculating…</span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                          <span className="text-xs font-semibold text-[#0F172A]">{zoneName}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      {isLoading ? (
+                        <span className="text-xs text-[#94A3B8]">Loading M8…</span>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded" style={{ color, background: `${color}15` }}>
+                              {priority}
+                            </span>
+                            <span className="font-mono text-xs font-semibold text-[#0F172A]">{riskScore}%</span>
+                          </div>
+                          <div className="text-[10px] text-[#94A3B8]">Est. Window ~{p50} min</div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-lg border ${statusColors[fixture.status] || ''}`}>
+                        {fixture.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-[#64748B]">{fixture.investigator}</td>
+                    <td className="px-4 py-3.5">
+                      <button className="text-[#14B8A6] hover:text-[#0D9488] text-xs font-semibold">Inspect →</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
         <div className="flex items-center justify-between px-5 py-3 border-t border-[#E2E8F0]">
-          <span className="text-xs text-[#64748B]">Showing {MOCK_CASES.length} cases</span>
+          <span className="text-xs text-[#64748B]">Showing {filteredCases.length} of {caseFixtures.length} cases (Live Backend Evaluated)</span>
           <div className="flex items-center gap-1">
             <button className="w-8 h-8 text-xs rounded-lg transition-colors bg-[#14B8A6] text-white font-semibold">1</button>
           </div>
@@ -165,3 +262,4 @@ function PlusIcon() {
 function DownloadIcon() {
   return <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5V9M4 7L6.5 9.5L9 7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 10.5H11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>;
 }
+

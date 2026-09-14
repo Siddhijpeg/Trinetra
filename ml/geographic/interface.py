@@ -150,9 +150,14 @@ def predict_geography(context: PredictionContext) -> Dict[str, Any]:
             "probability": float(round(final_probs[idx], 6)),
         })
 
+    top_zone_id = ranked_zones[0]["zone_id"] if ranked_zones else "Z000"
+    top_confidence = float(round(float(final_probs[sorted_idx[0]]) * 100.0, 1))
+
     return {
         "case_id": context.case_id,
         "prediction_time": context.prediction_time.isoformat(),
+        "predicted_destination_zone": top_zone_id,
+        "confidence_score": top_confidence,
         "ranked_zones": ranked_zones,
         "calibrated_confidence": float(round(float(final_probs[sorted_idx[0]]), 4)),
         "registry_signals": registry_signals,

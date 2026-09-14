@@ -11,10 +11,7 @@
     "prediction_dayofweek",
     "has_complaint",
     "elapsed_since_incident",
-    "amount_retained_ratio",
-    "to_account_historical_flags",
-    "registry_flagged_entity",
-    "m8_reliability"
+    "amount_retained_ratio"
   ],
   "prototype_status": "SYNTHETICALLY_VALIDATED_TIME_TO_EVENT_ENGINE",
   "temporal_splits": {
