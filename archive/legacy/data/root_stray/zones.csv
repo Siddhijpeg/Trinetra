@@ -1,0 +1,21 @@
+zone_id,zone_name,state,lat,lng
+Z01,Mewat,Haryana,28.0163,77.0263
+Z02,Jamtara,Jharkhand,23.9625,86.8021
+Z03,Ludhiana,Punjab,30.901,75.8573
+Z04,Amritsar,Punjab,31.634,74.8723
+Z05,South Delhi,Delhi,28.5355,77.241
+Z06,Hub-Dibrugarh,Mizoram,-33.8335,76.4845
+Z07,Hub-Gorakhpur,Odisha,-11.453,128.5887
+Z08,Hub-Thoothukudi,Punjab,33.9677,6.5079
+Z09,Hub-Ludhiana,Tripura,-81.4081,-138.5813
+Z10,Hub-Motihari,Nagaland,9.8613,97.7667
+Z11,Hub-Durg,Himachal Pradesh,14.7161,43.7908
+Z12,Hub-Vijayawada,Mizoram,-75.5293,125.2538
+Z13,Hub-Panihati,Madhya Pradesh,-14.317,136.5011
+Z14,Hub-Dibrugarh,Himachal Pradesh,-58.8843,-15.7147
+Z15,Hub-Panihati,Arunachal Pradesh,64.5819,-88.0198
+Z16,Hub-Gandhinagar,West Bengal,44.1862,-137.1356
+Z17,Hub-Bokaro,Mizoram,-75.3671,102.1574
+Z18,Hub-Bidar,Chhattisgarh,44.5837,8.5387
+Z19,Hub-Patna,Mizoram,82.5762,32.5684
+Z20,Hub-Dindigul,Uttarakhand,55.2601,99.1671

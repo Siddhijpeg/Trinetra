@@ -1,0 +1,68 @@
+// ─── Mock Alert Data ──────────────────────────────────────────────────────────
+// Extracted from AlertCenter.tsx
+// Will be replaced by prediction-triggered alerts from backend in integration phase.
+
+import type { Alert } from '../types';
+
+export const MOCK_ALERTS: Alert[] = [
+  {
+    alertId: 'ALT-2026-081942',
+    caseId: 'NCRP-26-81942',
+    type: 'CRITICAL CASH-OUT RISK',
+    zone: 'Gurugram Sector 29',
+    riskScore: 91,
+    riskLevel: 'critical',
+    windowMinutes: '46–110 minutes',
+    amount: '₹4.8L',
+    bank: 'HDFC Bank',
+    generatedAgo: '2 min ago',
+    status: 'unacknowledged',
+    timelineSteps: ['Prediction generated', 'Alert issued', 'Bank notified', 'LEA acknowledged'],
+    completedSteps: 3,
+  },
+  {
+    alertId: 'ALT-2026-081911',
+    caseId: 'NCRP-26-81911',
+    type: 'HIGH RISK CASH-OUT',
+    zone: 'Jaipur Central Market',
+    riskScore: 86,
+    riskLevel: 'critical',
+    windowMinutes: '20–85 minutes',
+    amount: '₹9.4L',
+    bank: 'SBI',
+    generatedAgo: '14 min ago',
+    status: 'unacknowledged',
+    timelineSteps: ['Prediction generated', 'Alert issued', 'Bank notified'],
+    completedSteps: 2,
+  },
+  {
+    alertId: 'ALT-2026-081773',
+    caseId: 'NCRP-26-81773',
+    type: 'ELEVATED RISK ALERT',
+    zone: 'Noida Sector 18',
+    riskScore: 84,
+    riskLevel: 'high',
+    windowMinutes: '35–120 minutes',
+    amount: '₹2.2L',
+    bank: 'ICICI Bank',
+    generatedAgo: '38 min ago',
+    status: 'acknowledged',
+    timelineSteps: ['Prediction generated', 'Alert issued'],
+    completedSteps: 1,
+  },
+  {
+    alertId: 'ALT-2026-081895',
+    caseId: 'NCRP-26-81895',
+    type: 'HIGH RISK CASH-OUT',
+    zone: 'Jaipur Airport Zone',
+    riskScore: 79,
+    riskLevel: 'high',
+    windowMinutes: '72–180 minutes',
+    amount: '₹7.1L',
+    bank: 'Axis Bank',
+    generatedAgo: '1h ago',
+    status: 'actioned',
+    timelineSteps: ['Prediction generated', 'Alert issued', 'Bank notified', 'LEA acknowledged', 'Intervention requested'],
+    completedSteps: 4,
+  },
+];

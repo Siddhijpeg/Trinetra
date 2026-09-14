@@ -1,0 +1,222 @@
+{
+  "Overall": {
+    "M3_Bayesian": {
+      "top1": 17.3,
+      "top3": 36.9,
+      "top5": 43.2,
+      "mrr": 0.306,
+      "geo_mean": 816.0,
+      "geo_med": 973.8,
+      "geo_p75": 1284.1,
+      "geo_p90": 1583.5,
+      "brier": 0.0131,
+      "nll": 3.999,
+      "entropy": 2.89
+    },
+    "M4_Count_Registry": {
+      "top1": 19.6,
+      "top3": 41.3,
+      "top5": 46.5,
+      "mrr": 0.329,
+      "geo_mean": 790.4,
+      "geo_med": 869.9,
+      "geo_p75": 1269.8,
+      "geo_p90": 1575.4,
+      "brier": 0.0128,
+      "nll": 3.863,
+      "entropy": 3.9
+    },
+    "M5_Override": {
+      "top1": 17.8,
+      "top3": 37.0,
+      "top5": 43.2,
+      "mrr": 0.308,
+      "geo_mean": 811.5,
+      "geo_med": 961.7,
+      "geo_p75": 1284.1,
+      "geo_p90": 1582.1,
+      "brier": 0.0128,
+      "nll": 3.991,
+      "entropy": 3.66
+    },
+    "M6_Concentration": {
+      "top1": 25.2,
+      "top3": 66.9,
+      "top5": 77.1,
+      "mrr": 0.472,
+      "geo_mean": 733.7,
+      "geo_med": 740.7,
+      "geo_p75": 1240.4,
+      "geo_p90": 1575.4,
+      "brier": 0.0116,
+      "nll": 2.675,
+      "entropy": 2.67
+    },
+    "M7_Combined": {
+      "top1": 25.8,
+      "top3": 68.3,
+      "top5": 79.7,
+      "mrr": 0.481,
+      "geo_mean": 739.0,
+      "geo_med": 768.0,
+      "geo_p75": 1244.9,
+      "geo_p90": 1564.0,
+      "brier": 0.0144,
+      "nll": 5.692,
+      "entropy": 1.26
+    },
+    "M8_Reliability": {
+      "top1": 25.6,
+      "top3": 66.6,
+      "top5": 77.8,
+      "mrr": 0.475,
+      "geo_mean": 725.3,
+      "geo_med": 714.2,
+      "geo_p75": 1239.3,
+      "geo_p90": 1563.2,
+      "brier": 0.0121,
+      "nll": 2.862,
+      "entropy": 2.86
+    }
+  },
+  "Coverage_Hits_Only": {
+    "M4": {
+      "top1": 21.7,
+      "top3": 44.5,
+      "top5": 49.5,
+      "mrr": 0.35,
+      "geo_mean": 774.4,
+      "geo_med": 798.9,
+      "geo_p75": 1293.9,
+      "geo_p90": 1573.5,
+      "brier": 0.0127,
+      "nll": 3.836,
+      "entropy": 3.84
+    },
+    "M8": {
+      "top1": 28.7,
+      "top3": 74.0,
+      "top5": 85.9,
+      "mrr": 0.52,
+      "geo_mean": 698.7,
+      "geo_med": 621.5,
+      "geo_p75": 1211.6,
+      "geo_p90": 1563.2,
+      "brier": 0.012,
+      "nll": 2.659,
+      "entropy": 2.63
+    }
+  },
+  "Coverage_NoHits_Only": {
+    "M4": {
+      "top1": 6.8,
+      "top3": 21.3,
+      "top5": 28.4,
+      "mrr": 0.198,
+      "geo_mean": 888.0,
+      "geo_med": 1058.8,
+      "geo_p75": 1246.4,
+      "geo_p90": 1575.4,
+      "brier": 0.013,
+      "nll": 4.029,
+      "entropy": 4.25
+    },
+    "M8": {
+      "top1": 6.8,
+      "top3": 21.3,
+      "top5": 28.4,
+      "mrr": 0.198,
+      "geo_mean": 888.0,
+      "geo_med": 1058.8,
+      "geo_p75": 1246.4,
+      "geo_p90": 1575.4,
+      "brier": 0.0131,
+      "nll": 4.098,
+      "entropy": 4.28
+    }
+  },
+  "Known_Mule": {
+    "M4": {
+      "top1": 21.7,
+      "top3": 44.5,
+      "top5": 49.5,
+      "mrr": 0.35,
+      "geo_mean": 774.4,
+      "geo_med": 798.9,
+      "geo_p75": 1293.9,
+      "geo_p90": 1573.5,
+      "brier": 0.0127,
+      "nll": 3.836,
+      "entropy": 3.84
+    },
+    "M8": {
+      "top1": 28.7,
+      "top3": 74.0,
+      "top5": 85.9,
+      "mrr": 0.52,
+      "geo_mean": 698.7,
+      "geo_med": 621.5,
+      "geo_p75": 1211.6,
+      "geo_p90": 1563.2,
+      "brier": 0.012,
+      "nll": 2.659,
+      "entropy": 2.63
+    }
+  },
+  "Unseen_Mule": {
+    "M4": {
+      "top1": 6.8,
+      "top3": 21.3,
+      "top5": 28.4,
+      "mrr": 0.198,
+      "geo_mean": 888.0,
+      "geo_med": 1058.8,
+      "geo_p75": 1246.4,
+      "geo_p90": 1575.4,
+      "brier": 0.013,
+      "nll": 4.029,
+      "entropy": 4.25
+    },
+    "M8": {
+      "top1": 6.8,
+      "top3": 21.3,
+      "top5": 28.4,
+      "mrr": 0.198,
+      "geo_mean": 888.0,
+      "geo_med": 1058.8,
+      "geo_p75": 1246.4,
+      "geo_p90": 1575.4,
+      "brier": 0.0131,
+      "nll": 4.098,
+      "entropy": 4.28
+    }
+  },
+  "Unseen_Syndicate_OOD": {
+    "M4": {
+      "top1": 6.3,
+      "top3": 21.8,
+      "top5": 28.7,
+      "mrr": 0.197,
+      "geo_mean": 885.3,
+      "geo_med": 1058.8,
+      "geo_p75": 1244.9,
+      "geo_p90": 1597.9,
+      "brier": 0.013,
+      "nll": 4.03,
+      "entropy": 4.25
+    },
+    "M8": {
+      "top1": 6.3,
+      "top3": 21.8,
+      "top5": 28.7,
+      "mrr": 0.197,
+      "geo_mean": 885.3,
+      "geo_med": 1058.8,
+      "geo_p75": 1244.9,
+      "geo_p90": 1597.9,
+      "brier": 0.0131,
+      "nll": 4.098,
+      "entropy": 4.28
+    }
+  }
+}

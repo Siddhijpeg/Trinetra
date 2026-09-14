@@ -1,0 +1,5 @@
+typology_id,name,avg_velocity_mins,cashout_window_hrs,typical_hops
+TYP_01,OTP Fraud,10,1.5,2
+TYP_02,Fake Loan App,35,4.0,3
+TYP_03,Part-Time Job Scam,90,12.0,4
+TYP_04,Investment Scam,150,24.0,3

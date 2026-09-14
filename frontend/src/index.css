@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+/* ─── Tailwind v4: theme tokens (static, design-system constants) ──────────── */
+@theme inline {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Sidebar — always dark, same in both themes */
+  --color-sidebar:             #15171A;
+  --color-sidebar-hover:       #1E2126;
+  --color-sidebar-active:      #1A2F2E;
+  --color-sidebar-border:      #2A2D32;
+  --color-sidebar-text:        #A0A8B4;
+  --color-sidebar-text-active: #ffffff;
+
+  /* Brand accent colors — constant across themes */
+  --color-teal:         #14B8A6;
+  --color-teal-hover:   #0F9E8E;
+  --color-teal-light:   #CCFBF1;
+  --color-teal-muted:   #0D9488;
+
+  --color-purple:       #7C5CFC;
+  --color-purple-light: #EDE9FE;
+  --color-purple-muted: #6D4FF5;
+
+  /* Semantic risk colors — constant across themes */
+  --color-critical:    #E5484D;
+  --color-critical-bg: #FFF1F1;
+  --color-high:        #F97316;
+  --color-high-bg:     #FFF7ED;
+  --color-medium:      #F59E0B;
+  --color-medium-bg:   #FFFBEB;
+  --color-low:         #10B981;
+  --color-low-bg:      #ECFDF5;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Light theme (default / :root)
+   ══════════════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="light"] {
+  /* Page & surface */
+  --app-bg:              #F7F8FA;
+  --surface:             #FFFFFF;
+  --surface-secondary:   #F7F8FA;
+  --surface-elevated:    #FFFFFF;
+  --surface-hover:       #F7FFFE;
+  --surface-active:      #F0FDFB;
+
+  /* Borders */
+  --border:              #E2E8F0;
+  --border-strong:       #CBD5E1;
+  --border-subtle:       #F1F5F9;
+
+  /* Typography */
+  --text-primary:        #0F172A;
+  --text-secondary:      #64748B;
+  --text-muted:          #94A3B8;
+  --text-placeholder:    #94A3B8;
+  --text-inverted:       #FFFFFF;
+  --text-on-dark:        #FFFFFF;
+
+  /* Inputs */
+  --input-bg:            #F7F8FA;
+  --input-bg-focus:      #FFFFFF;
+  --input-border:        #E2E8F0;
+  --input-border-focus:  #14B8A6;
+  --input-text:          #0F172A;
+
+  /* Top bar */
+  --topbar-bg:           #FFFFFF;
+  --topbar-border:       #E2E8F0;
+
+  /* Table */
+  --table-header-bg:     #F8FAFC;
+  --table-row-alt:       #FAFBFC;
+  --table-row-hover:     #F7FFFE;
+
+  /* Chart / tooltip */
+  --chart-tooltip-bg:    #0F172A;
+  --chart-tooltip-text:  #FFFFFF;
+  --chart-axis-color:    #94A3B8;
+  --chart-grid-color:    #F1F5F9;
+
+  /* Scrollbar */
+  --scrollbar-thumb:     #CBD5E1;
+  --scrollbar-thumb-hover: #94A3B8;
+
+  /* Risk badges (light backgrounds) */
+  --risk-critical-bg:    #FFF1F1;
+  --risk-critical-text:  #E5484D;
+  --risk-critical-border:rgba(229,72,77,0.2);
+  --risk-high-bg:        #FFF7ED;
+  --risk-high-text:      #EA580C;
+  --risk-high-border:    rgba(249,115,22,0.2);
+  --risk-medium-bg:      #FFFBEB;
+  --risk-medium-text:    #D97706;
+  --risk-medium-border:  rgba(245,158,11,0.2);
+  --risk-low-bg:         #ECFDF5;
+  --risk-low-text:       #059669;
+  --risk-low-border:     rgba(16,185,129,0.2);
+  --risk-resolved-bg:    #F0FDF4;
+  --risk-resolved-text:  #16A34A;
+  --risk-resolved-border:rgba(22,163,74,0.2);
+
+  /* Misc shadows */
+  --shadow-card:         0 1px 4px rgba(0,0,0,0.06);
+  --shadow-elevated:     0 4px 20px rgba(0,0,0,0.08);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Dark theme
+   ══════════════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Page & surface */
+  --app-bg:              #0E1117;
+  --surface:             #161B25;
+  --surface-secondary:   #1A2030;
+  --surface-elevated:    #1E2538;
+  --surface-hover:       #1C2B2A;
+  --surface-active:      #172524;
+
+  /* Borders */
+  --border:              #2A3147;
+  --border-strong:       #3A4460;
+  --border-subtle:       #1E2538;
+
+  /* Typography */
+  --text-primary:        #E2E8F0;
+  --text-secondary:      #94A3B8;
+  --text-muted:          #64748B;
+  --text-placeholder:    #4B5563;
+  --text-inverted:       #0F172A;
+  --text-on-dark:        #FFFFFF;
+
+  /* Inputs */
+  --input-bg:            #1A2030;
+  --input-bg-focus:      #1E2538;
+  --input-border:        #2A3147;
+  --input-border-focus:  #14B8A6;
+  --input-text:          #E2E8F0;
+
+  /* Top bar */
+  --topbar-bg:           #161B25;
+  --topbar-border:       #2A3147;
+
+  /* Table */
+  --table-header-bg:     #1A2030;
+  --table-row-alt:       #192028;
+  --table-row-hover:     #1C2B2A;
+
+  /* Chart / tooltip */
+  --chart-tooltip-bg:    #1E2538;
+  --chart-tooltip-text:  #E2E8F0;
+  --chart-axis-color:    #4B5563;
+  --chart-grid-color:    #1E2538;
+
+  /* Scrollbar */
+  --scrollbar-thumb:     #2A3147;
+  --scrollbar-thumb-hover: #3A4460;
+
+  /* Risk badges — same hue, dark-mode tinted backgrounds */
+  --risk-critical-bg:    rgba(229,72,77,0.15);
+  --risk-critical-text:  #F87171;
+  --risk-critical-border:rgba(229,72,77,0.3);
+  --risk-high-bg:        rgba(249,115,22,0.15);
+  --risk-high-text:      #FB923C;
+  --risk-high-border:    rgba(249,115,22,0.3);
+  --risk-medium-bg:      rgba(245,158,11,0.15);
+  --risk-medium-text:    #FBBF24;
+  --risk-medium-border:  rgba(245,158,11,0.3);
+  --risk-low-bg:         rgba(16,185,129,0.15);
+  --risk-low-text:       #34D399;
+  --risk-low-border:     rgba(16,185,129,0.3);
+  --risk-resolved-bg:    rgba(22,163,74,0.15);
+  --risk-resolved-text:  #4ADE80;
+  --risk-resolved-border:rgba(22,163,74,0.3);
+
+  /* Misc shadows */
+  --shadow-card:         0 1px 4px rgba(0,0,0,0.3);
+  --shadow-elevated:     0 4px 20px rgba(0,0,0,0.4);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BASE RESET & GLOBAL STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Smooth theme transitions on the root surface properties only */
+html {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+h1, h2, h3 {
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+p {
+  line-height: 1.7;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Theme-aware utility classes ───────────────────────────────────────────── */
+
+/* App shell */
+.app-bg       { background-color: var(--app-bg); }
+.surface      { background-color: var(--surface); }
+.surface-secondary { background-color: var(--surface-secondary); }
+.surface-elevated  { background-color: var(--surface-elevated); }
+
+/* Borders */
+.border-theme       { border-color: var(--border); }
+.border-theme-strong { border-color: var(--border-strong); }
+.border-theme-subtle { border-color: var(--border-subtle); }
+
+/* Text */
+.text-theme-primary   { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+.text-theme-muted     { color: var(--text-muted); }
+
+/* Inputs */
+.input-theme {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--input-text);
+}
+.input-theme::placeholder { color: var(--text-placeholder); }
+.input-theme:focus {
+  background-color: var(--input-bg-focus);
+  border-color: var(--input-border-focus);
+}
+
+/* Card */
+.card-theme {
+  background-color: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Top bar */
+.topbar-theme {
+  background-color: var(--topbar-bg);
+  border-color: var(--topbar-border);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Table */
+.table-header-theme { background-color: var(--table-header-bg); }
+.table-row-alt      { background-color: var(--table-row-alt); }
+.table-row-hover:hover { background-color: var(--table-row-hover); }
+
+/* ── Risk badge utility classes (theme-aware) ──────────────────────────────── */
+.risk-critical {
+  background: var(--risk-critical-bg);
+  color: var(--risk-critical-text);
+  border: 1px solid var(--risk-critical-border);
+}
+.risk-high {
+  background: var(--risk-high-bg);
+  color: var(--risk-high-text);
+  border: 1px solid var(--risk-high-border);
+}
+.risk-medium {
+  background: var(--risk-medium-bg);
+  color: var(--risk-medium-text);
+  border: 1px solid var(--risk-medium-border);
+}
+.risk-low {
+  background: var(--risk-low-bg);
+  color: var(--risk-low-text);
+  border: 1px solid var(--risk-low-border);
+}
+.risk-resolved {
+  background: var(--risk-resolved-bg);
+  color: var(--risk-resolved-text);
+  border: 1px solid var(--risk-resolved-border);
+}
+
+/* ── Brand gradients (theme-invariant) ─────────────────────────────────────── */
+.ai-gradient {
+  background: linear-gradient(135deg, #7C5CFC 0%, #5B4FCF 50%, #4338CA 100%);
+}
+.ai-gradient-subtle {
+  background: linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(67,56,202,0.05) 100%);
+}
+
+/* ── Dark mode: AI gradient subtle has slightly more presence ──────────────── */
+[data-theme="dark"] .ai-gradient-subtle {
+  background: linear-gradient(135deg, rgba(124,92,252,0.14) 0%, rgba(67,56,202,0.10) 100%);
+}
+
+/* ── Teal glow ─────────────────────────────────────────────────────────────── */
+.teal-glow {
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+/* ── Graph canvas (Fraud Network dark bg — theme invariant) ────────────────── */
+.graph-canvas {
+  background: radial-gradient(ellipse at 50% 50%, #1A2235 0%, #0F1520 100%);
+}
+
+/* ── Animations ────────────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.3); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.2s ease-out; }
+
+/* ── Sidebar navigation transitions ───────────────────────────────────────── */
+.nav-item {
+  transition: background 0.15s ease, color 0.15s ease;
+}

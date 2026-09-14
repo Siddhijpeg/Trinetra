@@ -1,0 +1,245 @@
+[
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 5.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 66.31827376938638
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 5.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 71.51045178691841
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 5.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 73.14565070802428
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 10.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 64.5987862440998
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 10.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 70.29669588671612
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 10.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 72.03304113283883
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 20.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 62.39042481456507
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 20.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 68.1726230613621
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 0.5,
+      "k": 20.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 71.25758597437627
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 5.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 64.73364801078894
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 5.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 70.85300067430883
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 5.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 72.62306136210384
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 10.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 63.30074173971679
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 10.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 69.3863789615644
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 10.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 71.71274443695212
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 20.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 61.39581928523263
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 20.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 67.09372892784896
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 1.0,
+      "k": 20.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 70.61699258260283
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 5.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 61.24409979770735
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 5.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 67.97033041132838
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 5.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 71.39244774106541
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 10.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 60.06405933917735
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 10.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 66.53742414025623
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 10.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 70.21240728253541
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 20.0,
+      "w_rel": 0.5
+    },
+    "val_top3": 58.47943358057991
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 20.0,
+      "w_rel": 1.0
+    },
+    "val_top3": 64.44706675657451
+  },
+  {
+    "config": {
+      "model_type": "M8",
+      "lambda": 5.0,
+      "k": 20.0,
+      "w_rel": 2.0
+    },
+    "val_top3": 68.83007417397168
+  }
+]

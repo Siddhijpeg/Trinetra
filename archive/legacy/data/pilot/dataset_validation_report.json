@@ -1,0 +1,18 @@
+{
+  "integrity": {
+    "orphan_hops": false,
+    "orphan_accounts": false
+  },
+  "temporal": {
+    "hops_after_incident": true
+  },
+  "distributions": {
+    "total_complaints": 5000,
+    "total_hops": 14246,
+    "avg_hops_per_complaint": 2.8492,
+    "mule_reuse_max": 543
+  },
+  "leakage": {},
+  "status": "PASSED",
+  "errors": []
+}
