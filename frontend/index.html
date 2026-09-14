@@ -5,6 +5,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><!-- figma:title --></title>
+    <!-- Anti-flash theme script: runs synchronously before first paint -->
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('trinetra-theme');
+          document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        } catch(e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
     <!-- figma:head-end -->
   </head>
   <body>

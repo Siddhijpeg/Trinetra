@@ -107,22 +107,25 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
       {/* ── Header ── */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <button onClick={onBack} className="text-xs text-[#64748B] hover:text-[#0F172A] flex items-center gap-1 font-medium transition-colors">
+          <button onClick={onBack} className="text-xs flex items-center gap-1 font-medium transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Cases
           </button>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2L8 6L4 10" stroke="#CBD5E1" strokeWidth="1.3" strokeLinecap="round"/></svg>
-          <span className="text-xs text-[#64748B] font-mono">NCRP-26-81942</span>
+          <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>NCRP-26-81942</span>
         </div>
 
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <h1 className="text-[24px] font-bold text-[#0F172A]">Case NCRP-26-81942</h1>
+              <h1 className="text-[24px] font-bold" style={{ color: 'var(--text-primary)' }}>Case NCRP-26-81942</h1>
               <RiskBadge level="critical" />
               <FeatureTag type="sih" />
             </div>
-            <p className="text-sm text-[#64748B]">Investment Fraud · ₹4,80,000 · Reported from New Delhi</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Investment Fraud · ₹4,80,000 · Reported from New Delhi</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm">Generate Report</Button>
@@ -140,7 +143,7 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
 
           {/* Case Snapshot */}
           <Card className="p-4">
-            <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wide mb-3">Case Details</div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Case Details</div>
             <div className="space-y-2">
               {[
                 { label: 'Complaint Time', value: '13:42 IST' },
@@ -150,25 +153,25 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                 { label: 'Linked Accounts', value: '4 (2 Persistent Risk)' },
               ].map(r => (
                 <div key={r.label} className="flex items-start justify-between gap-2">
-                  <span className="text-xs text-[#94A3B8] flex-shrink-0">{r.label}</span>
-                  <span className="text-xs font-semibold text-[#0F172A] text-right">{r.value}</span>
+                  <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{r.label}</span>
+                  <span className="text-xs font-semibold text-right" style={{ color: 'var(--text-primary)' }}>{r.value}</span>
                 </div>
               ))}
             </div>
             {/* Predicted zone */}
-            <div className="mt-3 pt-3 border-t border-[#F1F5F9]">
-              <div className="text-xs text-[#94A3B8] mb-1">Predicted Cash-Out Zone</div>
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+              <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Predicted Cash-Out Zone</div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#E5484D] pulse-dot flex-shrink-0" />
                 <span className="text-xs font-bold text-[#E5484D]">Gurugram Sector 29</span>
               </div>
-              <div className="text-[10px] text-[#94A3B8] mt-0.5">Est. window: 14:28 – 15:32 IST</div>
+              <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Est. window: 14:28 – 15:32 IST</div>
             </div>
           </Card>
 
           {/* Timeline */}
           <Card className="p-4">
-            <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wide mb-3">Case Timeline</div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Case Timeline</div>
             <div className="space-y-0">
               {DEMO_CASE_TIMELINE.map((entry, i) => (
                 <TimelineEvent
@@ -188,7 +191,7 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
         <div className="col-span-5 space-y-4">
 
           {/* Sequential Prediction Card */}
-          <div className="rounded-2xl border border-[#7C5CFC]/20 overflow-hidden shadow-sm">
+          <div className="rounded-2xl border overflow-hidden shadow-sm" style={{ borderColor: 'rgba(124,92,252,0.2)' }}>
             {/* Header */}
             <div className="ai-gradient px-5 py-4 flex items-center gap-3">
               <SparkleIcon size={16} />
@@ -214,12 +217,14 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                         ? 'bg-[#7C5CFC] text-white border-[#7C5CFC]'
                         : i < predStage
                         ? 'bg-[#7C5CFC]/10 text-[#7C5CFC] border-[#7C5CFC]/20'
-                        : 'bg-white text-[#94A3B8] border-[#E2E8F0]'
-                    }`}>
+                        : 'text-[#94A3B8]'
+                    }`}
+                    style={i > predStage ? { backgroundColor: 'var(--surface)', borderColor: 'var(--border)' } : undefined}>
                       {i < predStage && <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4L3 5.5L6.5 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>}
                       {i === 0 ? 'Prior' : i === 3 ? 'Decision' : `Hop ${i}`}
                     </div>
-                    {i < 3 && <div className={`flex-1 h-px ${i < predStage ? 'bg-[#7C5CFC]/30' : 'bg-[#E2E8F0]'}`} />}
+                    {i < 3 && <div className={`flex-1 h-px ${i < predStage ? 'bg-[#7C5CFC]/30' : ''}`}
+                      style={i >= predStage ? { backgroundColor: 'var(--border)' } : undefined} />}
                   </React.Fragment>
                 ))}
               </div>
@@ -227,8 +232,8 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
               {/* Confidence headline */}
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <div className="text-xs text-[#64748B] mb-0.5">Current top prediction</div>
-                  <div className="text-sm font-bold text-[#0F172A]">{currentStep.topZone}</div>
+                  <div className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Current top prediction</div>
+                  <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{currentStep.topZone}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold font-mono" style={{ color: confidenceColor(currentStep.confidence) }}>
@@ -245,20 +250,16 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
 
               {/* Zone probability list */}
               <div className="space-y-2 mb-4">
-                <div className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wide">Zone Probabilities</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Zone Probabilities</div>
                 {currentStep.zoneProbabilities.map((zp, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <div className="text-xs text-[#64748B] w-40 truncate">{zp.zone.district}</div>
-                    <div className="flex-1 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${zp.probability}%`,
-                          background: zp.probability >= 75 ? '#E5484D' : zp.probability >= 50 ? '#F97316' : zp.probability >= 30 ? '#F59E0B' : '#14B8A6',
-                        }}
-                      />
+                    <div className="text-xs w-40 truncate" style={{ color: 'var(--text-secondary)' }}>{zp.zone.district}</div>
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border-subtle)' }}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${zp.probability}%`,
+                          background: zp.probability >= 75 ? '#E5484D' : zp.probability >= 50 ? '#F97316' : zp.probability >= 30 ? '#F59E0B' : '#14B8A6' }} />
                     </div>
-                    <span className="text-xs font-mono font-bold text-[#0F172A] w-10 text-right">{zp.probability}%</span>
+                    <span className="text-xs font-mono font-bold w-10 text-right" style={{ color: 'var(--text-primary)' }}>{zp.probability}%</span>
                   </div>
                 ))}
               </div>
@@ -311,28 +312,28 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
 
           {/* Decision Card (stage 3) */}
           {predStage === 3 && (
-            <div className="rounded-2xl border border-[#E5484D]/25 overflow-hidden fade-in">
-              <div className="px-5 py-3.5 flex items-center justify-between" style={{ background: '#FFF1F1' }}>
+            <div className="rounded-2xl border overflow-hidden fade-in" style={{ borderColor: 'rgba(229,72,77,0.25)' }}>
+              <div className="px-5 py-3.5 flex items-center justify-between" style={{ background: 'var(--risk-critical-bg)' }}>
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#E5484D] pulse-dot" />
                   <span className="text-sm font-bold text-[#E5484D]">{decision.label}</span>
                 </div>
-                <span className="text-[10px] text-[#94A3B8]">Prototype decision logic</span>
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Prototype decision logic</span>
               </div>
-              <div className="p-4 bg-white space-y-3">
-                <p className="text-xs text-[#64748B]">{decision.reason}</p>
+              <div className="p-4 space-y-3" style={{ backgroundColor: 'var(--surface)' }}>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{decision.reason}</p>
 
                 {/* Recoverability */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-[#F7F8FA] border border-[#E2E8F0]">
-                    <div className="text-[10px] text-[#94A3B8] mb-1">Prediction Confidence</div>
+                  <div className="p-3 rounded-xl border" style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
+                    <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>Prediction Confidence</div>
                     <div className="text-xl font-bold font-mono text-[#10B981]">{decision.confidence}%</div>
-                    <div className="w-full h-1 bg-[#E2E8F0] rounded-full mt-1.5">
+                    <div className="w-full h-1 rounded-full mt-1.5" style={{ backgroundColor: 'var(--border)' }}>
                       <div className="h-full rounded-full bg-[#10B981]" style={{ width: `${decision.confidence}%` }} />
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#F7F8FA] border border-[#E2E8F0]">
-                    <div className="text-[10px] text-[#94A3B8] mb-1">
+                  <div className="p-3 rounded-xl border" style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
+                    <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>
                       Recoverability <PrototypeBadge />
                     </div>
                     <div className="text-xl font-bold font-mono text-[#F97316]">{decision.recoverability.score}%</div>
@@ -365,7 +366,8 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                     Notify Bank (HDFC)
                   </button>
                   <div className="grid grid-cols-2 gap-2">
-                    <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-[#E2E8F0] text-xs font-medium text-[#0F172A] hover:bg-[#F7F8FA] transition-colors">
+                    <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors"
+                      style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
                       Notify LEA
                     </button>
                     <button className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#14B8A6] text-white text-xs font-semibold hover:bg-[#0F9E8E] transition-colors">
@@ -381,16 +383,16 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
           {predStage > 0 && (
             <Card className="p-4 fade-in">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wide">Prediction Evolution</div>
+                <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Prediction Evolution</div>
                 <PrototypeBadge />
               </div>
               <ResponsiveContainer width="100%" height={90}>
                 <LineChart data={evolutionChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                  <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#94A3B8' }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: '#94A3B8' }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'var(--chart-axis-color)' }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: 'var(--chart-axis-color)' }} />
                   <Tooltip
                     formatter={(v: number) => [`${v}%`, 'Confidence']}
-                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #E2E8F0' }}
+                    contentStyle={{ fontSize: 11, borderRadius: 8, backgroundColor: 'var(--chart-tooltip-bg)', color: 'var(--chart-tooltip-text)', border: '1px solid var(--border)' }}
                   />
                   <Line type="monotone" dataKey="confidence" stroke="#7C5CFC" strokeWidth={2} dot={{ r: 4, fill: '#7C5CFC' }} />
                 </LineChart>
@@ -404,7 +406,7 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
 
           {/* Transaction Trail */}
           <Card className="p-4">
-            <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wide mb-4">Transaction Trail</div>
+            <div className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: 'var(--text-secondary)' }}>Transaction Trail</div>
             <div className="space-y-0">
               {DEMO_CASE_HOPS.map((hop, i) => (
                 <div key={i}>
@@ -419,8 +421,8 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                       {hop.fromLabel.split(' ')[0].slice(0, 3).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-[#0F172A]">{hop.fromLabel}</div>
-                      <div className="text-[10px] font-mono text-[#94A3B8]">{hop.fromBank} · {hop.fromAccount}</div>
+                      <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{hop.fromLabel}</div>
+                      <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>{hop.fromBank} · {hop.fromAccount}</div>
                     </div>
                   </div>
 
@@ -432,7 +434,7 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
                         hop.riskLevel === 'critical' ? 'bg-[#E5484D]' :
                         hop.riskLevel === 'high'     ? 'bg-[#F97316]' : 'bg-[#F59E0B]'
                       }`}>{hop.amount}</span>
-                      <span className="text-[9px] font-mono text-[#94A3B8]">{hop.timestamp}</span>
+                      <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>{hop.timestamp}</span>
                       {hop.isPredicted && (
                         <span className="text-[9px] font-semibold text-[#7C5CFC] border border-[#7C5CFC]/30 px-1 rounded">PREDICTED</span>
                       )}
@@ -456,26 +458,29 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
           {/* Linked Accounts */}
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wide">Linked Accounts</div>
-              <span className="text-[10px] text-[#14B8A6] font-medium">{DEMO_CASE_ACCOUNTS.length} total</span>
+              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Linked Accounts</div>
+              <span className="text-[10px] font-medium text-[#14B8A6]">{DEMO_CASE_ACCOUNTS.length} total</span>
             </div>
             <div className="space-y-2">
               {DEMO_CASE_ACCOUNTS.map(a => (
-                <div
-                  key={a.accountId}
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl border border-[#E2E8F0] hover:border-[#14B8A6]/30 cursor-pointer transition-colors"
+                <div key={a.accountId}
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-colors"
+                  style={{ borderColor: 'var(--border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(20,184,166,0.3)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                 >
-                  <div className="w-7 h-7 rounded-lg bg-[#F7F8FA] flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: 'var(--surface-secondary)' }}>
                     <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="4" width="11" height="7.5" rx="1.5" stroke="#64748B" strokeWidth="1.2"/><path d="M4 4V3C4 2.17 4.67 1.5 5.5 1.5H8.5C9.33 1.5 10 2.17 10 3V4" stroke="#64748B" strokeWidth="1.2"/></svg>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-bold text-[#0F172A]">{a.accountId}</span>
+                      <span className="text-xs font-mono font-bold" style={{ color: 'var(--text-primary)' }}>{a.accountId}</span>
                       {a.isPersistentRisk && (
-                        <span className="text-[9px] font-bold text-[#E5484D] bg-red-50 border border-red-200 px-1 rounded">PERSISTENT RISK</span>
+                        <span className="text-[9px] font-bold text-[#E5484D] px-1 rounded" style={{ backgroundColor: 'var(--risk-critical-bg)', border: '1px solid var(--risk-critical-border)' }}>PERSISTENT RISK</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-[#94A3B8]">{a.bank} · {a.type}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{a.bank} · {a.type}</div>
                   </div>
                   <RiskBadge level={a.riskLevel} />
                 </div>
@@ -486,52 +491,44 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
           {/* Outcome Feedback */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className="text-xs font-semibold text-[#64748B] uppercase tracking-wide flex-1">Record Outcome</div>
+              <div className="text-xs font-semibold uppercase tracking-wide flex-1" style={{ color: 'var(--text-secondary)' }}>Record Outcome</div>
               <FeatureTag type="usp" />
             </div>
             {!outcomeSubmitted ? (
               <>
                 <div className="space-y-1.5 mb-3">
                   {OUTCOMES.map(o => (
-                    <label
-                      key={o.value}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-all ${
-                        selectedOutcome === o.value
-                          ? 'border-[#14B8A6]/40 bg-[#F0FDFA]'
-                          : 'border-[#E2E8F0] hover:border-[#14B8A6]/20'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="outcome"
-                        value={o.value}
+                    <label key={o.value}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-all"
+                      style={selectedOutcome === o.value
+                        ? { borderColor: 'rgba(20,184,166,0.4)', backgroundColor: 'var(--surface-active)' }
+                        : { borderColor: 'var(--border)', backgroundColor: 'transparent' }
+                      }>
+                      <input type="radio" name="outcome" value={o.value}
                         checked={selectedOutcome === o.value}
                         onChange={() => setSelectedOutcome(o.value)}
-                        className="accent-[#14B8A6]"
-                      />
-                      <span className="text-xs font-medium text-[#0F172A]">{o.label}</span>
+                        className="accent-[#14B8A6]" />
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{o.label}</span>
                     </label>
                   ))}
                 </div>
-                <button
-                  onClick={handleOutcomeSubmit}
-                  disabled={!selectedOutcome}
+                <button onClick={handleOutcomeSubmit} disabled={!selectedOutcome}
                   className="w-full py-2 text-xs font-semibold rounded-xl text-white transition-all disabled:opacity-40"
-                  style={{ background: 'linear-gradient(135deg, #14B8A6, #0D9488)' }}
-                >
+                  style={{ background: 'linear-gradient(135deg, #14B8A6, #0D9488)' }}>
                   Submit Outcome
                 </button>
               </>
             ) : (
               <div className="py-4 text-center">
-                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-2">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
+                  style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <circle cx="9" cy="9" r="7" stroke="#10B981" strokeWidth="1.3"/>
                     <path d="M6 9L8 11L12 7" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
-                <div className="text-sm font-semibold text-[#0F172A] mb-1">Outcome Recorded</div>
-                <div className="text-xs text-[#64748B]">This feedback will support future model recalibration.</div>
+                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Outcome Recorded</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>This feedback will support future model recalibration.</div>
               </div>
             )}
           </Card>
@@ -540,7 +537,8 @@ export default function CaseWorkspace({ onBack }: { onBack?: () => void }) {
 
       {/* ── Toast ── */}
       {toastVisible && (
-        <div className="fixed bottom-6 right-6 bg-[#0F172A] text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2.5 fade-in z-50">
+        <div className="fixed bottom-6 right-6 px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2.5 fade-in z-50"
+          style={{ backgroundColor: 'var(--surface-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="5.5" stroke="#10B981" strokeWidth="1.3"/>
             <path d="M5 7L6.5 8.5L9.5 5.5" stroke="#10B981" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>

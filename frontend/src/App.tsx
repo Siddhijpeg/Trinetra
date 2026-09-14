@@ -15,6 +15,7 @@ import DataSources from './screens/DataSources';
 import Reports from './screens/Reports';
 import AuditLogs from './screens/AuditLogs';
 import { CaseProvider, useCaseContext } from './context/CaseContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 const breadcrumbMap: Record<string, string> = {
   command:         'Command Center',
@@ -79,16 +80,16 @@ function AppInner({ auth }: { auth: AuthState }) {
         return (
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="text-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#F7F8FA] border border-[#E2E8F0] flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 border card-theme">
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#94A3B8" strokeWidth="1.4"/>
-                  <rect x="12" y="3" width="7" height="7" rx="1.5" stroke="#94A3B8" strokeWidth="1.4"/>
-                  <rect x="3" y="12" width="7" height="7" rx="1.5" stroke="#94A3B8" strokeWidth="1.4"/>
-                  <rect x="12" y="12" width="7" height="7" rx="1.5" stroke="#94A3B8" strokeWidth="1.4"/>
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" style={{ color: 'var(--text-muted)' }}/>
+                  <rect x="12" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" style={{ color: 'var(--text-muted)' }}/>
+                  <rect x="3" y="12" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" style={{ color: 'var(--text-muted)' }}/>
+                  <rect x="12" y="12" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" style={{ color: 'var(--text-muted)' }}/>
                 </svg>
               </div>
-              <div className="font-semibold text-[#0F172A] mb-1">{breadcrumbMap[activeScreen] || 'Under Construction'}</div>
-              <div className="text-sm text-[#94A3B8]">This section is coming soon.</div>
+              <div className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{breadcrumbMap[activeScreen] || 'Under Construction'}</div>
+              <div className="text-sm" style={{ color: 'var(--text-muted)' }}>This section is coming soon.</div>
             </div>
           </div>
         );
@@ -101,7 +102,7 @@ function AppInner({ auth }: { auth: AuthState }) {
     : breadcrumbMap[activeScreen];
 
   return (
-    <div className="flex h-full overflow-hidden bg-[#F7F8FA]">
+    <div className="flex h-full overflow-hidden" style={{ backgroundColor: 'var(--app-bg)' }}>
       <Sidebar
         active={activeScreen === 'case-detail' ? 'cases' : activeScreen}
         onNavigate={navigate}
@@ -130,12 +131,18 @@ export default function App() {
   };
 
   if (!auth.isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <ThemeProvider>
+        <Login onLogin={handleLogin} />
+      </ThemeProvider>
+    );
   }
 
   return (
-    <CaseProvider>
-      <AppInner auth={auth} />
-    </CaseProvider>
+    <ThemeProvider>
+      <CaseProvider>
+        <AppInner auth={auth} />
+      </CaseProvider>
+    </ThemeProvider>
   );
 }

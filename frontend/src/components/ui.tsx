@@ -5,25 +5,30 @@ import React from 'react';
 export function FeatureTag({ type }: { type: 'sih' | 'usp' }) {
   if (type === 'sih') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-200 dark-feature-core">
         CORE
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-[#7C5CFC]/8 text-[#7C5CFC] border border-[#7C5CFC]/20">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest"
+      style={{ backgroundColor: 'rgba(124,92,252,0.08)', color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.2)' }}>
       TRINETRA+
     </span>
   );
 }
 
 // ─── Prototype Badge ──────────────────────────────────────────────────────────
-// Used sparingly to label frontend-simulated features without cluttering the UI
 
 export function PrototypeBadge({ tooltip }: { tooltip?: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-50 text-amber-600 border border-amber-200 cursor-default"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium cursor-default"
+      style={{
+        backgroundColor: 'rgba(245,158,11,0.1)',
+        color: '#D97706',
+        border: '1px solid rgba(245,158,11,0.25)',
+      }}
       title={tooltip || 'Prototype simulation — will be driven by real model output in production.'}
     >
       SIM
@@ -35,13 +40,16 @@ export function PrototypeBadge({ tooltip }: { tooltip?: string }) {
 
 export function SectionLabel({ children, type }: { children: React.ReactNode; type?: 'sih' | 'usp' | 'neutral' }) {
   const styles = {
-    sih: 'text-blue-500 border-blue-200',
-    usp: 'text-[#7C5CFC] border-[#7C5CFC]/25',
-    neutral: 'text-[#94A3B8] border-[#E2E8F0]',
+    sih: { color: '#3B82F6', borderColor: '#BFDBFE' },
+    usp: { color: '#7C5CFC', borderColor: 'rgba(124,92,252,0.25)' },
+    neutral: { color: 'var(--text-muted)', borderColor: 'var(--border)' },
   };
   const s = styles[type || 'neutral'];
   return (
-    <div className={`inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest border-l-2 pl-2.5 mb-3 ${s}`}>
+    <div
+      className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest border-l-2 pl-2.5 mb-3"
+      style={{ color: s.color, borderColor: s.borderColor }}
+    >
       {children}
     </div>
   );
@@ -52,21 +60,24 @@ export function SectionLabel({ children, type }: { children: React.ReactNode; ty
 type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'resolved' | 'verified' | 'partial' | 'misleading';
 
 export function RiskBadge({ level, score }: { level: RiskLevel; score?: number }) {
-  const configs: Record<RiskLevel, { label: string; className: string }> = {
-    critical: { label: 'Critical', className: 'risk-critical' },
-    high: { label: 'High', className: 'risk-high' },
-    medium: { label: 'Medium', className: 'risk-medium' },
-    low: { label: 'Low', className: 'risk-low' },
-    resolved: { label: 'Resolved', className: 'risk-resolved' },
-    verified: { label: 'Verified', className: 'risk-low' },
-    partial: { label: 'Partial', className: 'risk-medium' },
-    misleading: { label: 'Misleading', className: 'risk-critical' },
+  const classMap: Record<RiskLevel, string> = {
+    critical:   'risk-critical',
+    high:       'risk-high',
+    medium:     'risk-medium',
+    low:        'risk-low',
+    resolved:   'risk-resolved',
+    verified:   'risk-low',
+    partial:    'risk-medium',
+    misleading: 'risk-critical',
   };
-  const c = configs[level];
+  const labelMap: Record<RiskLevel, string> = {
+    critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low',
+    resolved: 'Resolved', verified: 'Verified', partial: 'Partial', misleading: 'Misleading',
+  };
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold font-mono ${c.className}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold font-mono ${classMap[level]}`}>
       {score !== undefined && <span>{score}</span>}
-      {c.label.toUpperCase()}
+      {labelMap[level].toUpperCase()}
     </span>
   );
 }
@@ -87,7 +98,10 @@ export function StatusDot({ status }: { status: 'live' | 'connected' | 'limited'
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_1px_4px_rgba(0,0,0,0.06)] ${className}`}>
+    <div
+      className={`rounded-2xl border card-theme ${className}`}
+      style={{ transition: 'background-color 0.2s ease, border-color 0.2s ease' }}
+    >
       {children}
     </div>
   );
@@ -103,16 +117,23 @@ export function KPICard({
   return (
     <Card className="p-5 flex flex-col gap-3">
       <div className="flex items-start justify-between">
-        <span className="text-xs font-medium text-[#64748B] uppercase tracking-wide">{title}</span>
-        {icon && <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${accentColor}18` }}>{icon}</div>}
+        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{title}</span>
+        {icon && (
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: `${accentColor}18` }}>
+            {icon}
+          </div>
+        )}
       </div>
       <div>
-        <div className="text-3xl font-bold text-[#0F172A] leading-none">{value}</div>
-        {sub && <div className="text-xs text-[#64748B] mt-1">{sub}</div>}
+        <div className="text-3xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{value}</div>
+        {sub && <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{sub}</div>}
       </div>
       {trend && (
-        <div className="text-xs font-medium text-emerald-600 flex items-center gap-1">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9L6 3L10 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <div className="text-xs font-medium text-emerald-500 flex items-center gap-1">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 9L6 3L10 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
           {trend}
         </div>
       )}
@@ -126,8 +147,8 @@ export function SectionHeader({ title, subtitle, actions }: { title: string; sub
   return (
     <div className="flex items-start justify-between mb-6">
       <div>
-        <h1 className="text-2xl font-bold text-[#0F172A]">{title}</h1>
-        {subtitle && <p className="text-sm text-[#64748B] mt-1">{subtitle}</p>}
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
+        {subtitle && <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
@@ -144,20 +165,27 @@ export function Tabs({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="flex gap-1 bg-[#F7F8FA] rounded-xl p-1 border border-[#E2E8F0]">
+    <div
+      className="flex gap-1 rounded-xl p-1 border"
+      style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}
+    >
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+          style={
             active === tab.id
-              ? 'bg-white text-[#0F172A] shadow-sm border border-[#E2E8F0]'
-              : 'text-[#64748B] hover:text-[#0F172A]'
-          }`}
+              ? { backgroundColor: 'var(--surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid var(--border)' }
+              : { backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid transparent' }
+          }
         >
           {tab.label}
           {tab.count !== undefined && (
-            <span className={`ml-2 px-1.5 py-0.5 rounded text-xs ${active === tab.id ? 'bg-[#F1F5F9]' : 'bg-[#E2E8F0]'}`}>
+            <span
+              className="ml-2 px-1.5 py-0.5 rounded text-xs"
+              style={{ backgroundColor: 'var(--surface-secondary)', color: 'var(--text-muted)' }}
+            >
               {tab.count}
             </span>
           )}
@@ -180,17 +208,29 @@ export function Button({
   icon?: React.ReactNode;
 }) {
   const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-5 py-2.5 text-sm' };
-  const variants = {
-    primary: 'bg-[#14B8A6] text-white hover:bg-[#0F9E8E] border border-transparent',
-    secondary: 'bg-white text-[#0F172A] hover:bg-[#F7F8FA] border border-[#E2E8F0]',
-    ghost: 'bg-transparent text-[#64748B] hover:bg-[#F7F8FA] hover:text-[#0F172A] border border-transparent',
-    danger: 'bg-white text-[#E5484D] hover:bg-[#FFF1F1] border border-[#E5484D]/20',
-    ai: 'ai-gradient text-white border border-transparent hover:opacity-90',
+
+  const getVariantStyle = () => {
+    switch (variant) {
+      case 'primary':
+        return { backgroundColor: '#14B8A6', color: '#FFFFFF', border: '1px solid transparent' };
+      case 'secondary':
+        return { backgroundColor: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' };
+      case 'ghost':
+        return { backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid transparent' };
+      case 'danger':
+        return { backgroundColor: 'var(--surface)', color: '#E5484D', border: '1px solid rgba(229,72,77,0.2)' };
+      case 'ai':
+        return { background: 'linear-gradient(135deg, #7C5CFC 0%, #4338CA 100%)', color: '#FFFFFF', border: '1px solid transparent' };
+      default:
+        return {};
+    }
   };
+
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-all ${sizes[size]} ${variants[variant]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-lg font-medium transition-all ${sizes[size]} ${className}`}
+      style={getVariantStyle()}
     >
       {icon && icon}
       {children}
@@ -208,16 +248,22 @@ export function TimelineEvent({
   return (
     <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className={`w-2.5 h-2.5 rounded-full border-2 mt-1 ${isHighlight ? 'bg-[#14B8A6] border-[#14B8A6]' : 'bg-white border-[#CBD5E1]'}`} />
-        {!isLast && <div className="w-px bg-[#E2E8F0] flex-1 mt-1" />}
+        <div
+          className="w-2.5 h-2.5 rounded-full border-2 mt-1"
+          style={{
+            backgroundColor: isHighlight ? '#14B8A6' : 'var(--surface)',
+            borderColor: isHighlight ? '#14B8A6' : 'var(--border-strong)',
+          }}
+        />
+        {!isLast && <div className="w-px flex-1 mt-1" style={{ backgroundColor: 'var(--border)' }} />}
       </div>
       <div className="pb-4">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs font-medium text-[#14B8A6]">{time}</span>
-          <span className="text-sm font-medium text-[#0F172A]">{label}</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{label}</span>
           {isHighlight && <span className="risk-critical px-1.5 py-0.5 rounded text-xs font-mono">ALERT</span>}
         </div>
-        {desc && <p className="text-xs text-[#64748B] mt-0.5">{desc}</p>}
+        {desc && <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{desc}</p>}
       </div>
     </div>
   );
@@ -227,14 +273,15 @@ export function TimelineEvent({
 
 export function AICard({ title, children, className = '' }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-[#7C5CFC]/20 overflow-hidden ${className}`}>
+    <div className={`rounded-2xl overflow-hidden ${className}`}
+      style={{ border: '1px solid rgba(124,92,252,0.2)' }}>
       {title && (
         <div className="ai-gradient px-5 py-3.5 flex items-center gap-2">
           <SparkleIcon />
           <span className="text-sm font-semibold text-white">{title}</span>
         </div>
       )}
-      <div className="bg-gradient-to-br from-[#7C5CFC]/5 to-[#4338CA]/3 p-5">
+      <div className="ai-gradient-subtle p-5">
         {children}
       </div>
     </div>
@@ -268,7 +315,8 @@ export function SearchBar({
 }) {
   return (
     <div className={`relative ${className}`}>
-      <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 16 16" fill="none"
+        style={{ color: 'var(--text-muted)' }}>
         <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
         <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
@@ -277,7 +325,20 @@ export function SearchBar({
         placeholder={placeholder}
         value={value}
         onChange={e => onChange?.(e.target.value)}
-        className="w-full pl-9 pr-4 py-2 text-sm border border-[#E2E8F0] rounded-xl bg-white text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#14B8A6] focus:ring-2 focus:ring-[#14B8A6]/10 transition-all"
+        className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border outline-none transition-all input-theme"
+        style={{
+          backgroundColor: 'var(--input-bg)',
+          borderColor: 'var(--input-border)',
+          color: 'var(--input-text)',
+        }}
+        onFocus={e => {
+          (e.target as HTMLInputElement).style.borderColor = 'var(--input-border-focus)';
+          (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(20,184,166,0.1)';
+        }}
+        onBlur={e => {
+          (e.target as HTMLInputElement).style.borderColor = 'var(--input-border)';
+          (e.target as HTMLInputElement).style.boxShadow = 'none';
+        }}
       />
     </div>
   );
@@ -297,7 +358,12 @@ export function FilterSelect({
     <select
       value={value}
       onChange={e => onChange?.(e.target.value)}
-      className="text-sm border border-[#E2E8F0] rounded-xl bg-white text-[#0F172A] px-3 py-2 focus:outline-none focus:border-[#14B8A6] focus:ring-2 focus:ring-[#14B8A6]/10 transition-all cursor-pointer"
+      className="text-sm rounded-xl border px-3 py-2 outline-none transition-all cursor-pointer"
+      style={{
+        backgroundColor: 'var(--input-bg)',
+        borderColor: 'var(--input-border)',
+        color: 'var(--input-text)',
+      }}
     >
       <option value="">{label}</option>
       {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -310,11 +376,11 @@ export function FilterSelect({
 export function ConfidenceBar({ label, value, color = '#14B8A6' }: { label: string; value: number; color?: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 bg-[#F1F5F9] rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border-subtle)' }}>
         <div className="h-full rounded-full transition-all" style={{ width: `${value}%`, background: color }} />
       </div>
-      <span className="text-xs font-mono font-medium text-[#64748B] w-8 text-right">+{value}%</span>
-      <span className="text-xs text-[#64748B] flex-[2]">{label}</span>
+      <span className="text-xs font-mono font-medium w-8 text-right" style={{ color: 'var(--text-secondary)' }}>+{value}%</span>
+      <span className="text-xs flex-[2]" style={{ color: 'var(--text-secondary)' }}>{label}</span>
     </div>
   );
 }
@@ -325,13 +391,49 @@ export function Chip({ label, onClick, active }: { label: string; onClick?: () =
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+      className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+      style={
         active
-          ? 'bg-[#14B8A6]/10 border-[#14B8A6]/30 text-[#0F9E8E]'
-          : 'bg-white border-[#E2E8F0] text-[#64748B] hover:border-[#14B8A6]/30 hover:text-[#0F172A]'
-      }`}
+          ? { backgroundColor: 'rgba(20,184,166,0.1)', borderColor: 'rgba(20,184,166,0.3)', color: '#0D9488' }
+          : { backgroundColor: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }
+      }
     >
       {label}
     </button>
+  );
+}
+
+// ─── Themed Recharts Tooltip ──────────────────────────────────────────────────
+// Shared tooltip component that respects theme tokens.
+
+export function ThemedTooltip({
+  active,
+  payload,
+  label,
+  formatter,
+}: {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  formatter?: (value: any, payload: any) => React.ReactNode;
+}) {
+  if (!active || !payload?.length) return null;
+  const value = payload[0]?.value;
+  return (
+    <div
+      className="rounded-xl px-3 py-2 shadow-xl text-xs font-sans border"
+      style={{
+        backgroundColor: 'var(--chart-tooltip-bg)',
+        color: 'var(--chart-tooltip-text)',
+        borderColor: 'var(--border)',
+      }}
+    >
+      {formatter ? formatter(value, payload[0]) : (
+        <>
+          <div className="font-mono font-bold" style={{ color: '#14B8A6' }}>{value}</div>
+          {label && <div className="opacity-70 text-[10px] mt-0.5">{label}</div>}
+        </>
+      )}
+    </div>
   );
 }

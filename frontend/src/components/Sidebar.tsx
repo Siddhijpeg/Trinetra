@@ -53,7 +53,7 @@ export default function Sidebar({
     : 'AM';
 
   return (
-    <aside className="w-[220px] min-w-[220px] h-full flex flex-col" style={{ background: '#15171A' }}>
+    <aside className="w-[220px] min-w-[220px] h-full flex flex-col shrink-0" style={{ background: '#15171A' }}>
       {/* Logo */}
       <div className="px-5 py-5 border-b" style={{ borderColor: '#2A2D32' }}>
         <div className="flex items-center gap-3">

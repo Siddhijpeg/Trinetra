@@ -71,40 +71,42 @@ const recentReports = [
 function ReportCard({ r, isUSP }: { r: ReportItem; isUSP?: boolean }) {
   const [generating, setGenerating] = useState(false);
   return (
-    <Card className="p-5 hover:border-[#14B8A6]/35 transition-colors group cursor-pointer">
+    <Card className="p-5 group cursor-pointer transition-colors">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-[#F7F8FA] border border-[#E2E8F0] flex items-center justify-center text-xl flex-shrink-0 group-hover:border-[#14B8A6]/30 transition-colors">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 border transition-colors"
+          style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)' }}>
           {r.icon}
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-[#0F172A] text-sm">{r.title}</span>
+            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{r.title}</span>
             {r.isBadge && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200">{r.isBadge}</span>
             )}
             {r.isAI && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#7C5CFC]/8 text-[#7C5CFC] border border-[#7C5CFC]/20">AI</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: 'rgba(124,92,252,0.08)', color: '#7C5CFC', border: '1px solid rgba(124,92,252,0.2)' }}>AI</span>
             )}
           </div>
-          <p className="text-xs text-[#64748B] leading-relaxed">{r.desc}</p>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{r.desc}</p>
         </div>
       </div>
       <div className="mb-4">
-        <div className="text-[9px] text-[#94A3B8] uppercase tracking-wide font-semibold mb-1.5">Includes</div>
+        <div className="text-[9px] uppercase tracking-wide font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Includes</div>
         <div className="flex flex-wrap gap-1">
           {r.sections.map(s => (
-            <span key={s} className="text-[9px] px-1.5 py-0.5 rounded bg-[#F7F8FA] border border-[#E2E8F0] text-[#64748B]">{s}</span>
+            <span key={s} className="text-[9px] px-1.5 py-0.5 rounded border"
+              style={{ backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>{s}</span>
           ))}
         </div>
       </div>
       <button
         onClick={() => { setGenerating(true); setTimeout(() => setGenerating(false), 2000); }}
-        className={`w-full py-2 text-xs font-semibold rounded-xl transition-all ${
-          generating
-            ? (isUSP ? 'bg-[#7C5CFC] text-white' : 'bg-[#14B8A6] text-white')
-            : 'border border-[#E2E8F0] text-[#64748B] hover:border-[#14B8A6]/30 hover:text-[#14B8A6]'
-        }`}
-      >
+        className="w-full py-2 text-xs font-semibold rounded-xl transition-all border"
+        style={generating
+          ? { backgroundColor: isUSP ? '#7C5CFC' : '#14B8A6', color: '#FFFFFF', borderColor: 'transparent' }
+          : { backgroundColor: 'transparent', borderColor: 'var(--border)', color: 'var(--text-secondary)' }
+        }>
         {generating ? 'Generating…' : 'Generate Report'}
       </button>
     </Card>
@@ -118,8 +120,8 @@ export default function Reports() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[26px] font-bold text-[#0F172A] leading-tight mb-1.5">Intelligence Reports</h1>
-          <p className="text-sm text-[#64748B] leading-relaxed max-w-lg">
+          <h1 className="text-[26px] font-bold leading-tight mb-1.5" style={{ color: 'var(--text-primary)' }}>Intelligence Reports</h1>
+          <p className="text-sm leading-relaxed max-w-lg" style={{ color: 'var(--text-secondary)' }}>
             Generate, export, and securely share intelligence reports for investigations and command briefings.
           </p>
         </div>
@@ -147,35 +149,38 @@ export default function Reports() {
 
       {/* Recent Reports */}
       <section>
-        <div className="font-semibold text-[#0F172A] mb-4">Recent Reports</div>
+        <div className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Recent Reports</div>
         <Card className="overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
+              <tr className="border-b" style={{ backgroundColor: 'var(--table-header-bg)', borderColor: 'var(--border)' }}>
                 {['Report Type', 'Reference', 'Generated', 'Status', 'Size', 'Category', 'Actions'].map(h => (
-                  <th key={h} className="text-left px-5 py-3 text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {recentReports.map((r, i) => (
-                <tr key={i} className="border-b border-[#F1F5F9] hover:bg-[#F7FFFE] transition-colors">
-                  <td className="px-5 py-3.5 text-xs font-bold text-[#0F172A]">{r.type}</td>
-                  <td className="px-4 py-3.5 text-xs text-[#64748B]">{r.ref}</td>
-                  <td className="px-4 py-3.5 text-xs font-mono text-[#94A3B8]">{r.generated}</td>
+                <tr key={i} className="border-b transition-colors"
+                  style={{ borderColor: 'var(--border-subtle)' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--table-row-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
+                  <td className="px-5 py-3.5 text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{r.type}</td>
+                  <td className="px-4 py-3.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{r.ref}</td>
+                  <td className="px-4 py-3.5 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{r.generated}</td>
                   <td className="px-4 py-3.5">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg border ${r.status === 'Ready' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-[#F7F8FA] border-[#E2E8F0] text-[#94A3B8]'}`}>
-                      {r.status}
-                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-lg border"
+                      style={r.status === 'Ready'
+                        ? { backgroundColor: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.3)', color: '#059669' }
+                        : { backgroundColor: 'var(--surface-secondary)', borderColor: 'var(--border)', color: 'var(--text-muted)' }
+                      }>{r.status}</span>
                   </td>
-                  <td className="px-4 py-3.5 text-xs font-mono text-[#94A3B8]">{r.size}</td>
-                  <td className="px-4 py-3.5">
-                    <FeatureTag type={r.isCore ? 'sih' : 'usp'} />
-                  </td>
+                  <td className="px-4 py-3.5 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{r.size}</td>
+                  <td className="px-4 py-3.5"><FeatureTag type={r.isCore ? 'sih' : 'usp'} /></td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2.5">
                       <button className="text-xs font-medium text-[#14B8A6] hover:underline">Preview</button>
-                      <button className="text-xs font-medium text-[#64748B] hover:underline">Export PDF</button>
+                      <button className="text-xs font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>Export PDF</button>
                       <button className="text-xs font-medium text-[#7C5CFC] hover:underline">Share</button>
                     </div>
                   </td>
