@@ -1,0 +1,10 @@
+{
+  "description": "Enables users to create and customize professional designs effortlessly, enhancing creativity and streamlining the design process for all skill levels.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

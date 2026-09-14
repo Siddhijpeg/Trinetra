@@ -1,0 +1,180 @@
+{
+  "overall": {
+    "M0_Global": {
+      "count": 6571,
+      "top1_acc": 6.1,
+      "top3_recall": 17.7,
+      "top5_recall": 28.0,
+      "mrr": 0.184,
+      "geo_err_mean_km": 871.8,
+      "geo_err_median_km": 1058.8,
+      "geo_err_p90_km": 1723.2,
+      "brier_score": 0.0129,
+      "mean_entropy": 3.78
+    },
+    "M1_Typology": {
+      "count": 6571,
+      "top1_acc": 8.4,
+      "top3_recall": 21.7,
+      "top5_recall": 33.0,
+      "mrr": 0.214,
+      "geo_err_mean_km": 953.3,
+      "geo_err_median_km": 1079.7,
+      "geo_err_p90_km": 1575.4,
+      "brier_score": 0.0128,
+      "mean_entropy": 3.65
+    },
+    "M2_XGBoost_T1": {
+      "count": 6571,
+      "top1_acc": 5.5,
+      "top3_recall": 16.4,
+      "top5_recall": 26.5,
+      "mrr": 0.174,
+      "geo_err_mean_km": 975.1,
+      "geo_err_median_km": 1061.5,
+      "geo_err_p90_km": 1652.8,
+      "brier_score": 0.013,
+      "mean_entropy": 3.63
+    },
+    "M3_Bayes_Hop1": {
+      "count": 6571,
+      "top1_acc": 12.6,
+      "top3_recall": 29.7,
+      "top5_recall": 37.1,
+      "mrr": 0.259,
+      "geo_err_mean_km": 889.6,
+      "geo_err_median_km": 1047.1,
+      "geo_err_p90_km": 1564.0,
+      "brier_score": 0.0129,
+      "mean_entropy": 4.14
+    },
+    "M3_Bayes_HopN": {
+      "count": 6571,
+      "top1_acc": 17.5,
+      "top3_recall": 35.1,
+      "top5_recall": 39.9,
+      "mrr": 0.296,
+      "geo_err_mean_km": 829.9,
+      "geo_err_median_km": 1006.3,
+      "geo_err_p90_km": 1575.4,
+      "brier_score": 0.0127,
+      "mean_entropy": 3.93
+    },
+    "M4_NetworkEnriched_HopN": {
+      "count": 6571,
+      "top1_acc": 20.4,
+      "top3_recall": 39.7,
+      "top5_recall": 43.7,
+      "mrr": 0.322,
+      "geo_err_mean_km": 799.4,
+      "geo_err_median_km": 893.8,
+      "geo_err_p90_km": 1575.4,
+      "brier_score": 0.0128,
+      "mean_entropy": 4.04
+    }
+  },
+  "known_mule_cases": {
+    "M3_Bayes_HopN": {
+      "count": 5646,
+      "top1_acc": 17.7,
+      "top3_recall": 35.4,
+      "top5_recall": 40.1,
+      "mrr": 0.298,
+      "geo_err_mean_km": 821.4,
+      "geo_err_median_km": 961.7,
+      "geo_err_p90_km": 1575.4,
+      "brier_score": 0.0127,
+      "mean_entropy": 3.93
+    },
+    "M4_NetworkEnriched_HopN": {
+      "count": 5646,
+      "top1_acc": 20.7,
+      "top3_recall": 40.0,
+      "top5_recall": 44.2,
+      "mrr": 0.325,
+      "geo_err_mean_km": 788.6,
+      "geo_err_median_km": 832.9,
+      "geo_err_p90_km": 1569.7,
+      "brier_score": 0.0128,
+      "mean_entropy": 4.03
+    }
+  },
+  "unseen_mule_cases": {
+    "M3_Bayes_HopN": {
+      "count": 925,
+      "top1_acc": 15.8,
+      "top3_recall": 33.3,
+      "top5_recall": 38.3,
+      "mrr": 0.282,
+      "geo_err_mean_km": 881.3,
+      "geo_err_median_km": 1056.0,
+      "geo_err_p90_km": 1597.9,
+      "brier_score": 0.0128,
+      "mean_entropy": 3.98
+    },
+    "M4_NetworkEnriched_HopN": {
+      "count": 925,
+      "top1_acc": 18.3,
+      "top3_recall": 37.5,
+      "top5_recall": 41.1,
+      "mrr": 0.302,
+      "geo_err_mean_km": 865.5,
+      "geo_err_median_km": 1042.8,
+      "geo_err_p90_km": 1600.2,
+      "brier_score": 0.0129,
+      "mean_entropy": 4.1
+    }
+  },
+  "known_syndicate_cases": {
+    "M3_Bayes_HopN": {
+      "count": 5825,
+      "top1_acc": 17.5,
+      "top3_recall": 35.2,
+      "top5_recall": 40.0,
+      "mrr": 0.296,
+      "geo_err_mean_km": 825.2,
+      "geo_err_median_km": 970.0,
+      "geo_err_p90_km": 1575.4,
+      "brier_score": 0.0127,
+      "mean_entropy": 3.93
+    },
+    "M4_NetworkEnriched_HopN": {
+      "count": 5825,
+      "top1_acc": 20.5,
+      "top3_recall": 39.7,
+      "top5_recall": 43.9,
+      "mrr": 0.323,
+      "geo_err_mean_km": 792.7,
+      "geo_err_median_km": 857.7,
+      "geo_err_p90_km": 1575.4,
+      "brier_score": 0.0128,
+      "mean_entropy": 4.04
+    }
+  },
+  "unseen_syndicate_cases": {
+    "M3_Bayes_HopN": {
+      "count": 746,
+      "top1_acc": 17.0,
+      "top3_recall": 34.3,
+      "top5_recall": 38.9,
+      "mrr": 0.291,
+      "geo_err_mean_km": 866.0,
+      "geo_err_median_km": 1042.8,
+      "geo_err_p90_km": 1600.2,
+      "brier_score": 0.0127,
+      "mean_entropy": 3.96
+    },
+    "M4_NetworkEnriched_HopN": {
+      "count": 746,
+      "top1_acc": 19.6,
+      "top3_recall": 39.4,
+      "top5_recall": 42.1,
+      "mrr": 0.314,
+      "geo_err_mean_km": 851.3,
+      "geo_err_median_km": 1029.4,
+      "geo_err_p90_km": 1600.2,
+      "brier_score": 0.0128,
+      "mean_entropy": 4.08
+    }
+  }
+}

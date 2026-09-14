@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRAHARI — Cash-Out Intelligence Framework</title>
+<style>
+  :root{
+    --bg:#0F1116;
+    --bg-elev:#171A22;
+    --bg-elev2:#1D212B;
+    --border:#2A2E3A;
+    --text:#E7E5DF;
+    --text-dim:#8A8E9C;
+    --text-faint:#5B5F6D;
+    --amber:#E3A23C;
+    --amber-dim:#5A4726;
+    --green:#4FA083;
+    --green-dim:#20362E;
+    --red:#C15B45;
+    --red-dim:#3A2620;
+    --mono: 'SF Mono', 'Roboto Mono', 'Consolas', monospace;
+    --sans: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    height:100%; overflow:hidden;
+  }
+  ::selection{ background:var(--amber); color:#0F1116; }
+
+  /* ---------- INTRO ---------- */
+  #intro{
+    position:fixed; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; z-index:50;
+    background:var(--bg); transition:opacity .7s ease, visibility .7s;
+  }
+  #intro.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  #netcanvas{ position:absolute; inset:0; width:100%; height:100%; }
+  .intro-content{ position:relative; z-index:2; text-align:center; padding:0 24px; }
+  .intro-mark{
+    font-family:var(--mono); font-size:12px; letter-spacing:.28em;
+    color:var(--amber); margin-bottom:22px;
+  }
+  .intro-title{
+    font-size:clamp(38px,7vw,74px); font-weight:600; letter-spacing:-.02em;
+    line-height:1.02; color:var(--text);
+  }
+  .intro-title span{ color:var(--amber); }
+  .intro-sub{
+    margin-top:18px; color:var(--text-dim); font-size:15px; max-width:520px;
+    margin-left:auto; margin-right:auto; line-height:1.6;
+  }
+  .intro-btn{
+    margin-top:38px; background:transparent; border:1px solid var(--amber);
+    color:var(--amber); font-family:var(--mono); font-size:13px; letter-spacing:.08em;
+    padding:13px 30px; cursor:pointer; transition:.25s;
+  }
+  .intro-btn:hover{ background:var(--amber); color:#0F1116; }
+  .intro-foot{
+    position:absolute; bottom:26px; left:0; right:0; text-align:center;
+    font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.1em; z-index:2;
+  }
+
+  /* ---------- CONSOLE ---------- */
+  #console{ height:100%; display:flex; flex-direction:column; }
+
+  header.topstrip{
+    display:flex; align-items:center; gap:28px;
+    padding:12px 22px; border-bottom:1px solid var(--border); background:var(--bg-elev);
+    flex-shrink:0;
+  }
+  .brand{ font-weight:700; letter-spacing:.02em; font-size:15px; }
+  .brand em{ font-style:normal; color:var(--amber); }
+  .strip-item{ font-family:var(--mono); font-size:12px; color:var(--text-dim); }
+  .strip-item b{ color:var(--text); font-weight:500; }
+  .spacer{ flex:1; }
+  .badge{
+    font-family:var(--mono); font-size:11px; letter-spacing:.05em; padding:5px 11px;
+    border-radius:2px; border:1px solid transparent;
+  }
+  .badge.low{ background:var(--bg-elev2); color:var(--text-dim); border-color:var(--border); }
+  .badge.med{ background:var(--amber-dim); color:var(--amber); border-color:var(--amber); }
+  .badge.high{ background:var(--red-dim); color:var(--red); border-color:var(--red); }
+  .badge.ok{ background:var(--green-dim); color:var(--green); border-color:var(--green); }
+
+  main{ flex:1; display:grid; grid-template-columns: 1.15fr .85fr; overflow:hidden; }
+
+  /* --- zone map panel --- */
+  .panel{ display:flex; flex-direction:column; overflow:hidden; }
+  .panel + .panel{ border-left:1px solid var(--border); }
+  .panel-head{
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-head h2{ font-size:13px; font-weight:600; letter-spacing:.03em; }
+  .panel-head .hint{ font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+  .panel-body{ flex:1; overflow-y:auto; padding:20px; }
+
+  .zonegrid{
+    display:grid; grid-template-columns:repeat(12,1fr); grid-template-rows:repeat(8,1fr);
+    gap:3px; height:340px; margin-bottom:22px;
+  }
+  .zcell{
+    background:var(--bg-elev2); border-radius:1px; transition:background .5s, box-shadow .5s;
+  }
+  .zcell.warm{ background:#2c2618; }
+  .zcell.hot{ background:var(--amber-dim); box-shadow:0 0 10px rgba(227,162,60,.25) inset; }
+  .zcell.core{ background:var(--amber); box-shadow:0 0 18px rgba(227,162,60,.55); animation:pulse 1.6s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.6;} }
+
+  .zone-meta{
+    display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    border-top:1px solid var(--border); padding-top:14px;
+  }
+  .zone-meta b{ color:var(--text); }
+
+  .scorepair{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px; }
+  .scorecard{ background:var(--bg-elev); border:1px solid var(--border); padding:16px; }
+  .scorecard .label{ font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.05em; }
+  .scorecard .value{ font-size:24px; font-weight:600; margin-top:6px; }
+  .scorecard .value.amber{ color:var(--amber); }
+  .scorecard .value.red{ color:var(--red); }
+  .scorecard .value.green{ color:var(--green); }
+  .scorecard .sub{ font-size:12px; color:var(--text-dim); margin-top:4px; }
+
+  .decision-banner{
+    margin-top:18px; padding:14px 16px; border-left:3px solid var(--border);
+    background:var(--bg-elev); font-size:13px; color:var(--text-dim); transition:.4s;
+  }
+  .decision-banner.fire{ border-color:var(--red); color:var(--text); background:var(--red-dim); }
+  .decision-banner.review{ border-color:var(--amber); color:var(--text); background:var(--amber-dim); }
+  .decision-banner b{ display:block; font-family:var(--mono); font-size:11px; letter-spacing:.06em; margin-bottom:4px; color:inherit; }
+
+  /* --- feed panel --- */
+  .feed{ display:flex; flex-direction:column; gap:10px; }
+  .feed-item{
+    border-left:2px solid var(--border); padding:9px 0 9px 14px; opacity:0; transform:translateY(6px);
+    animation:enter .4s ease forwards;
+  }
+  @keyframes enter{ to{opacity:1; transform:translateY(0);} }
+  .feed-item .t{ font-family:var(--mono); font-size:10px; color:var(--text-faint); }
+  .feed-item .m{ font-size:13px; margin-top:3px; line-height:1.45; }
+  .feed-item.registry{ border-color:var(--amber); }
+  .feed-item.registry .m{ color:var(--amber); }
+  .feed-item.decision{ border-color:var(--red); }
+  .feed-item.decision .m{ color:var(--text); }
+  .feed-item.feedback{ border-color:var(--green); }
+  .feed-item.feedback .m{ color:var(--green); }
+
+  .explain{
+    margin-top:6px; background:var(--bg-elev); border:1px solid var(--border); padding:14px 16px;
+    font-size:12.5px; color:var(--text-dim); display:none;
+  }
+  .explain.show{ display:block; }
+  .explain h3{ font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.05em; margin-bottom:8px; }
+  .explain ul{ padding-left:16px; line-height:1.7; }
+  .explain li b{ color:var(--text); }
+
+  footer.controls{
+    border-top:1px solid var(--border); background:var(--bg-elev);
+    padding:14px 20px; display:flex; align-items:center; gap:12px; flex-shrink:0;
+  }
+  .btn{
+    font-family:var(--mono); font-size:12px; letter-spacing:.04em; padding:10px 18px;
+    background:var(--bg-elev2); border:1px solid var(--border); color:var(--text); cursor:pointer; transition:.2s;
+  }
+  .btn:hover{ border-color:var(--amber); color:var(--amber); }
+  .btn.primary{ background:var(--amber); color:#0F1116; border-color:var(--amber); font-weight:600; }
+  .btn.primary:hover{ background:#f0b155; color:#0F1116; }
+  .btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn:disabled:hover{ border-color:var(--border); color:var(--text); }
+  .step-label{ font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-left:auto; }
+
+  .tabbtn{
+    font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--text-dim);
+    background:none; border:none; cursor:pointer; padding:4px 0; border-bottom:1px solid transparent;
+  }
+  .tabbtn.active{ color:var(--amber); border-color:var(--amber); }
+
+  .ew-box{ background:var(--bg-elev); border:1px solid var(--border); padding:14px 16px; margin-top:14px; font-size:12.5px; color:var(--text-dim); line-height:1.6; }
+  .ew-box b{ color:var(--amber); }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <canvas id="netcanvas"></canvas>
+  <div class="intro-content">
+    <div class="intro-mark">SIH26184 · PREDICTIVE INTELLIGENCE FRAMEWORK</div>
+    <div class="intro-title">PR<span>A</span>HARI</div>
+    <div class="intro-sub">Cash-out is predicted before it happens — not read off a heatmap after the fact. Every signal updates the estimate. Every case teaches the network.</div>
+    <button class="intro-btn" onclick="enterConsole()">ENTER CONSOLE →</button>
+  </div>
+  <div class="intro-foot">TEAM DEMO BUILD · MOCK DATA · INTERNAL ROUND</div>
+</div>
+
+<div id="console">
+  <header class="topstrip">
+    <div class="brand">PR<em>A</em>HARI</div>
+    <div class="strip-item">CASE <b id="caseId">CYB-2026-04471</b></div>
+    <div class="strip-item">TYPOLOGY <b>Loan-App Fraud</b></div>
+    <div class="strip-item">ELAPSED <b id="elapsed">00:00</b></div>
+    <div class="spacer"></div>
+    <div class="strip-item">CONFIDENCE</div>
+    <span class="badge low" id="confBadge">LOW</span>
+    <div class="strip-item">RECOVERABILITY</div>
+    <span class="badge low" id="recBadge">—</span>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>ZONE ESTIMATE — POSTERIOR OVER SECTORS</h2>
+        <span class="hint" id="zoneHint">awaiting first signal</span>
+      </div>
+      <div class="panel-body">
+        <div class="zonegrid" id="zonegrid"></div>
+        <div class="zone-meta">
+          <span>PREDICTED SECTOR: <b id="sectorName">—</b></span>
+          <span>REFERENCE-CLASS MATCH: <b id="refMatch">—</b></span>
+        </div>
+
+        <div class="scorepair">
+          <div class="scorecard">
+            <div class="label">CONFIDENCE</div>
+            <div class="value" id="confValue">—</div>
+            <div class="sub" id="confSub">Reference-class prior only</div>
+          </div>
+          <div class="scorecard">
+            <div class="label">RECOVERABILITY WINDOW</div>
+            <div class="value" id="recValue">—</div>
+            <div class="sub" id="recSub">Based on typology cash-out pattern</div>
+          </div>
+        </div>
+
+        <div class="decision-banner" id="decisionBanner">
+          <b>DECISION ENGINE</b>
+          Awaiting sufficient signal to route this case.
+        </div>
+
+        <div style="margin-top:22px; display:flex; gap:18px;">
+          <button class="tabbtn active" id="tabExplain" onclick="showTab('explain')">EXPLAINABILITY</button>
+          <button class="tabbtn" id="tabEarly" onclick="showTab('early')">EARLY-WARNING (PRE-COMPLAINT)</button>
+        </div>
+
+        <div class="explain" id="explainBox">
+          <h3>WHY THIS SECTOR</h3>
+          <ul id="explainList">
+            <li>No contributing factors yet — advance the case to see reasoning.</li>
+          </ul>
+        </div>
+        <div class="explain" id="earlyBox">
+          <div class="ew-box">
+            <b>Micro-transaction pattern watcher</b> — independent of this case.<br><br>
+            Account <b style="color:var(--text)">XX7734</b> showed 3 test transactions of ₹1–₹10 across two apps in the last 45 minutes, followed by a ₹1,000 transfer — a known staging signature for loan-app fraud, seen <b>before</b> any complaint is filed. Flagged to watch queue for pre-emptive monitoring.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>LIVE SIGNAL FEED</h2>
+        <span class="hint">complaint → hop → decision → outcome</span>
+      </div>
+      <div class="panel-body">
+        <div class="feed" id="feed"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="controls">
+    <button class="btn primary" id="nextBtn" onclick="nextStep()">ADVANCE CASE →</button>
+    <button class="btn" onclick="resetDemo()">RESET</button>
+    <span class="step-label" id="stepLabel">STEP 0 / 6</span>
+  </footer>
+</div>
+
+<script>
+/* ---------------- intro network animation ---------------- */
+const canvas = document.getElementById('netcanvas');
+const ctx = canvas.getContext('2d');
+let W,H,nodes=[];
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+const N = 60;
+for(let i=0;i<N;i++){
+  nodes.push({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-0.5)*.25, vy:(Math.random()-0.5)*.25,
+    pulse:Math.random()*Math.PI*2
+  });
+}
+function drawNet(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0F1116'; ctx.fillRect(0,0,W,H);
+  for(const n of nodes){
+    n.x+=n.vx; n.y+=n.vy; n.pulse+=0.02;
+    if(n.x<0||n.x>W) n.vx*=-1;
+    if(n.y<0||n.y>H) n.vy*=-1;
+  }
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i], b=nodes[j];
+      const d = Math.hypot(a.x-b.x, a.y-b.y);
+      if(d<140){
+        ctx.strokeStyle = `rgba(227,162,60,${(1-d/140)*0.12})`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+  }
+  for(const n of nodes){
+    const r = 1.4 + Math.sin(n.pulse)*0.8;
+    ctx.fillStyle = 'rgba(227,162,60,0.55)';
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,7); ctx.fill();
+  }
+  requestAnimationFrame(drawNet);
+}
+drawNet();
+
+function enterConsole(){
+  document.getElementById('intro').classList.add('hide');
+  startTimer();
+}
+
+/* ---------------- elapsed timer ---------------- */
+let secs=0, timerHandle=null;
+function startTimer(){
+  if(timerHandle) return;
+  timerHandle = setInterval(()=>{
+    secs++;
+    const m=String(Math.floor(secs/60)).padStart(2,'0');
+    const s=String(secs%60).padStart(2,'0');
+    document.getElementById('elapsed').textContent = `${m}:${s}`;
+  },1000);
+}
+
+/* ---------------- zone grid ---------------- */
+const grid = document.getElementById('zonegrid');
+const COLS=12, ROWS=8;
+let cells=[];
+for(let r=0;r<ROWS;r++){
+  for(let c=0;c<COLS;c++){
+    const d=document.createElement('div');
+    d.className='zcell';
+    grid.appendChild(d);
+    cells.push(d);
+  }
+}
+function idx(r,c){ return r*COLS+c; }
+function clearGrid(){ cells.forEach(c=>c.className='zcell'); }
+function paintStage(stage){
+  clearGrid();
+  // core target sector
+  const cr=3, cc=7;
+  if(stage>=1){
+    // wide warm region (prior)
+    for(let r=cr-3;r<=cr+3;r++) for(let c=cc-4;c<=cc+4;c++){
+      if(r>=0&&r<ROWS&&c>=0&&c<COLS) cells[idx(r,c)].classList.add('warm');
+    }
+  }
+  if(stage>=2){
+    for(let r=cr-1;r<=cr+1;r++) for(let c=cc-2;c<=cc+2;c++){
+      if(r>=0&&r<ROWS&&c>=0&&c<COLS) cells[idx(r,c)].classList.add('hot');
+    }
+  }
+  if(stage>=3){
+    cells[idx(cr,cc)].classList.add('core');
+    cells[idx(cr,cc-1)].classList.add('core');
+    cells[idx(cr+1,cc)].classList.add('hot');
+  }
+}
+
+/* ---------------- feed helper ---------------- */
+const feed = document.getElementById('feed');
+function pushFeed(type, time, msg){
+  const el=document.createElement('div');
+  el.className='feed-item'+(type?(' '+type):'');
+  el.innerHTML = `<div class="t">${time}</div><div class="m">${msg}</div>`;
+  feed.appendChild(el);
+  feed.parentElement.scrollTop = feed.parentElement.scrollHeight;
+}
+function nowLabel(){
+  const m=String(Math.floor(secs/60)).padStart(2,'0');
+  const s=String(secs%60).padStart(2,'0');
+  return `T+${m}:${s}`;
+}
+
+/* ---------------- tabs ---------------- */
+function showTab(which){
+  document.getElementById('tabExplain').classList.toggle('active', which==='explain');
+  document.getElementById('tabEarly').classList.toggle('active', which==='early');
+  document.getElementById('explainBox').classList.toggle('show', which==='explain');
+  document.getElementById('earlyBox').classList.toggle('show', which==='early');
+}
+showTab('explain');
+
+/* ---------------- demo state machine ---------------- */
+let step=0;
+const totalSteps=6;
+
+function setBadge(el, level, text){
+  el.className='badge '+level;
+  el.textContent=text;
+}
+
+function nextStep(){
+  step++;
+  document.getElementById('stepLabel').textContent = `STEP ${step} / ${totalSteps}`;
+
+  if(step===1){
+    pushFeed('', nowLabel(), 'Complaint <b>CYB-2026-04471</b> filed — Loan-App Fraud, ₹48,000, victim account debited.');
+    pushFeed('', nowLabel(), 'Reference-class match run against historical typology cluster — 214 similar cases found.');
+    paintStage(1);
+    document.getElementById('sectorName').textContent = 'Wide region — Central Zone cluster';
+    document.getElementById('refMatch').textContent = '214 similar cases';
+    setBadge(document.getElementById('confBadge'),'low','LOW');
+    document.getElementById('confValue').textContent = '31%';
+    document.getElementById('confSub').textContent = 'Reference-class prior only — no case-specific hops yet';
+    setBadge(document.getElementById('recBadge'),'low','ASSESSING');
+    document.getElementById('recValue').textContent = '—';
+    document.getElementById('zoneHint').textContent = 'prior established';
+  }
+
+  else if(step===2){
+    pushFeed('', nowLabel(), 'Hop 1 traced — funds moved to intermediary account MU-3391.');
+    pushFeed('registry', nowLabel(), 'Registry match: account MU-3391 appeared in 2 other unrelated complaints in the last 30 days. Risk weight boosted.');
+    paintStage(2);
+    document.getElementById('sectorName').textContent = 'Narrowing — Sector 7C cluster';
+    setBadge(document.getElementById('confBadge'),'med','MEDIUM');
+    document.getElementById('confValue').textContent = '58%';
+    document.getElementById('confSub').textContent = 'Posterior updated with hop 1 + registry cross-match';
+    document.getElementById('explainList').innerHTML = `
+      <li><b>Typology match:</b> loan-app fraud, consistent with reference class</li>
+      <li><b>Registry flag:</b> MU-3391 seen in 2 prior unrelated cases</li>
+      <li><b>Hop count:</b> 1 of typical 2–3 for this typology</li>`;
+  }
+
+  else if(step===3){
+    pushFeed('', nowLabel(), 'Hop 2 traced — funds moved to MU-3391 → beneficiary AC-8820, Sector 7C branch.');
+    pushFeed('', nowLabel(), 'Posterior sharpened — estimator converging on a single sector.');
+    paintStage(3);
+    document.getElementById('sectorName').textContent = 'Sector 7C — ATM cluster (3 machines)';
+    setBadge(document.getElementById('confBadge'),'high','HIGH');
+    document.getElementById('confValue').textContent = '87%';
+    document.getElementById('confSub').textContent = 'Sequential estimator, 2 hops observed';
+    setBadge(document.getElementById('recBadge'),'high','URGENT');
+    document.getElementById('recValue').textContent = '≈ 22 min left';
+    document.getElementById('recSub').textContent = 'Typical loan-app cash-out window: 30–90 min post-transfer';
+    document.getElementById('explainList').innerHTML = `
+      <li><b>Typology match:</b> loan-app fraud, consistent with reference class</li>
+      <li><b>Registry flag:</b> MU-3391 seen in 2 prior unrelated cases</li>
+      <li><b>Hop count:</b> 2 of typical 2–3 — near typical cash-out point</li>
+      <li><b>Similar past case:</b> CYB-2025-11902, same ATM cluster, resolved</li>`;
+    document.getElementById('zoneHint').textContent = 'converged';
+  }
+
+  else if(step===4){
+    pushFeed('decision', nowLabel(), 'DECISION ENGINE: confidence HIGH + window URGENT → auto-alert fired to Sector 7C bank/ATM network + I4C dashboard.');
+    const b=document.getElementById('decisionBanner');
+    b.className='decision-banner fire';
+    b.innerHTML = '<b>AUTO-ALERT FIRED</b>Routed to Sector 7C bank branch, 3 ATMs, and I4C regional dashboard. No human review required at this confidence tier.';
+  }
+
+  else if(step===5){
+    pushFeed('feedback', nowLabel(), 'Investigator marked outcome: funds frozen at ATM before withdrawal.');
+    pushFeed('feedback', nowLabel(), 'Feedback loop: registry recalibrated — MU-3391 risk score raised, Sector 7C weight reinforced for future cases.');
+    setBadge(document.getElementById('recBadge'),'ok','RECOVERED');
+  }
+
+  else if(step===6){
+    showTab('early');
+    document.getElementById('tabEarly').scrollIntoView({block:'nearest'});
+    pushFeed('registry', nowLabel(), 'Independent watcher: micro-transaction staging pattern flagged on account XX7734 — before any complaint filed.');
+  }
+
+  if(step>=totalSteps){
+    document.getElementById('nextBtn').disabled=true;
+    document.getElementById('nextBtn').textContent='CASE COMPLETE';
+  }
+}
+
+function resetDemo(){
+  step=0; secs=0;
+  document.getElementById('elapsed').textContent='00:00';
+  document.getElementById('stepLabel').textContent='STEP 0 / 6';
+  document.getElementById('nextBtn').disabled=false;
+  document.getElementById('nextBtn').textContent='ADVANCE CASE →';
+  feed.innerHTML='';
+  clearGrid();
+  document.getElementById('sectorName').textContent='—';
+  document.getElementById('refMatch').textContent='—';
+  document.getElementById('zoneHint').textContent='awaiting first signal';
+  setBadge(document.getElementById('confBadge'),'low','LOW');
+  setBadge(document.getElementById('recBadge'),'low','—');
+  document.getElementById('confValue').textContent='—';
+  document.getElementById('confSub').textContent='Reference-class prior only';
+  document.getElementById('recValue').textContent='—';
+  document.getElementById('recSub').textContent='Based on typology cash-out pattern';
+  const b=document.getElementById('decisionBanner');
+  b.className='decision-banner';
+  b.innerHTML='<b>DECISION ENGINE</b>Awaiting sufficient signal to route this case.';
+  document.getElementById('explainList').innerHTML='<li>No contributing factors yet — advance the case to see reasoning.</li>';
+  showTab('explain');
+}
+</script>
+</body>
+</html>

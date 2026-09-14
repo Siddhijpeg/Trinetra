@@ -1,0 +1,21 @@
+zone_id,district,state,lat,lng
+Z000,Central Delhi,Delhi,28.6519,77.2315
+Z001,South Delhi,Delhi,28.5245,77.2066
+Z002,Mumbai City,Maharashtra,18.975,72.8258
+Z003,Mumbai Suburban,Maharashtra,19.076,72.8777
+Z004,Pune,Maharashtra,18.5204,73.8567
+Z005,Bengaluru Urban,Karnataka,12.9716,77.5946
+Z006,Hyderabad,Telangana,17.385,78.4867
+Z007,Chennai,Tamil Nadu,13.0827,80.2707
+Z008,Kolkata,West Bengal,22.5726,88.3639
+Z009,Jaipur,Rajasthan,26.9124,75.7873
+Z010,Lucknow,Uttar Pradesh,26.8467,80.9462
+Z011,Ahmedabad,Gujarat,23.0225,72.5714
+Z012,Patna,Bihar,25.5941,85.1376
+Z013,Bhopal,Madhya Pradesh,23.2599,77.4126
+Z014,Chandigarh,Chandigarh,30.7333,76.7794
+Z015,Kochi,Kerala,9.9312,76.2673
+Z016,Guwahati,Assam,26.1445,91.7362
+Z017,Indore,Madhya Pradesh,22.7196,75.8577
+Z018,Surat,Gujarat,21.1702,72.8311
+Z019,Nagpur,Maharashtra,21.1458,79.0882
