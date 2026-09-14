@@ -1,0 +1,633 @@
+{
+  "dataset_version": "v2",
+  "generated": "2026-09-14",
+  "seed": 2026,
+  "audit_date": "2026-09-14",
+  "description": "Representative UI/backend test cases for TRINETRA V2 dataset. All 10 cases have unique complaint_ids, verified scenario tags, and full zone metadata. case_key='I' (CENSORED) has cashout_zone=null \u2014 this is intentional and correct. Use 'incident_timestamp', 'complaint_timestamp', 'available_timestamp' and 'hops' to construct API payloads for POST /api/v1/predict.",
+  "timing_note": "inc_to_cash_min = incident \u2192 cashout (case-level window). lh_to_cash_min  = last hop event \u2192 cashout (generator's VERY_SHORT_WINDOW definition). These are different quantities. For Time-to-Event remaining-time at T0: remaining \u2248 inc_to_cash_min + 10 (since T0 = incident_time - 10 min).",
+  "censoring_note": "For CENSORED cases: cashout_zone=null in this manifest. The generator's intended target zone is stored ONLY in data/synthetic_v2/generator_metadata.csv and must never enter canonical inference. event_timestamp in cashout_events.csv for CENSORED = last_hop_time + 24h (observation boundary, not true cashout time).",
+  "cases": [
+    {
+      "case_key": "A",
+      "label": "High-confidence geographic convergence",
+      "description": "8-hop chain provides strong registry signal for M8. Cashout zone narrows clearly from T0\u2192Hop1\u2192Hop2\u2192Latest. Tests geographic convergence.",
+      "complaint_id": "V2CMP_0041719",
+      "typology_id": "TYP_06",
+      "typology_name": "Marketplace / OLX Fraud",
+      "amount_inr": 7742.28,
+      "hop_count": 8,
+      "inc_to_cash_min": 105.8,
+      "lh_to_cash_min": 8.9,
+      "status": "COMPLETED",
+      "edge_case_tag": "LONG_CHAIN|CROSS_STATE|CROSS_REGION|SHORT_WINDOW",
+      "filer_cohort": "normal",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-05-20T21:21:12",
+      "complaint_timestamp": "2026-05-20T22:44:51.993209",
+      "available_timestamp": "2026-05-20T23:09:51.993209",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_114",
+        "zone_name": "Palakkad / Malappuram",
+        "locality": "Palakkad bus stand",
+        "city": "Palakkad",
+        "district": "Palakkad",
+        "state": "Kerala",
+        "region": "coastal",
+        "lat": 10.7867,
+        "lng": 76.6548,
+        "zone_type": "Tier3City"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0038285",
+          "amount_transferred": 6121.57,
+          "channel": "IMPS",
+          "event_timestamp": "2026-05-20T21:23:40.850462",
+          "available_timestamp": "2026-05-20T22:02:40.850462"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0038285",
+          "amount_transferred": 4689.15,
+          "channel": "IMPS",
+          "event_timestamp": "2026-05-20T21:24:40.850462",
+          "available_timestamp": "2026-05-20T21:51:40.850462"
+        },
+        {
+          "hop_sequence": 3,
+          "to_account": "ACCV2_0038331",
+          "amount_transferred": 2938.89,
+          "channel": "UPI",
+          "event_timestamp": "2026-05-20T21:28:13.207353",
+          "available_timestamp": "2026-05-20T21:58:13.207353"
+        },
+        {
+          "hop_sequence": 4,
+          "to_account": "ACCV2_0038290",
+          "amount_transferred": 1890.99,
+          "channel": "UPI",
+          "event_timestamp": "2026-05-20T21:29:36.972959",
+          "available_timestamp": "2026-05-20T22:19:36.972959"
+        },
+        {
+          "hop_sequence": 5,
+          "to_account": "ACCV2_0038284",
+          "amount_transferred": 1089.29,
+          "channel": "UPI",
+          "event_timestamp": "2026-05-20T22:20:46.386360",
+          "available_timestamp": "2026-05-20T23:50:46.386360"
+        },
+        {
+          "hop_sequence": 6,
+          "to_account": "ACCV2_0038284",
+          "amount_transferred": 892.74,
+          "channel": "UPI",
+          "event_timestamp": "2026-05-20T22:35:51.664042",
+          "available_timestamp": "2026-05-20T23:49:51.664042"
+        },
+        {
+          "hop_sequence": 7,
+          "to_account": "ACCV2_0038331",
+          "amount_transferred": 688.27,
+          "channel": "NEFT",
+          "event_timestamp": "2026-05-20T22:38:41.330762",
+          "available_timestamp": "2026-05-20T23:38:41.330762"
+        },
+        {
+          "hop_sequence": 8,
+          "to_account": "ACCV2_0038284",
+          "amount_transferred": 688.27,
+          "channel": "UPI",
+          "event_timestamp": "2026-05-20T22:58:03.579915",
+          "available_timestamp": "2026-05-21T00:27:03.579915"
+        }
+      ]
+    },
+    {
+      "case_key": "B",
+      "label": "Geographically ambiguous (cross-region, 2-hop)",
+      "description": "2 hops, cross-region transfer. Limited registry evidence. Multiple plausible nearby zones. Tests M8 prior-dominant path and entropy-high output.",
+      "complaint_id": "V2CMP_0000006",
+      "typology_id": "TYP_06",
+      "typology_name": "Marketplace / OLX Fraud",
+      "amount_inr": 7407.91,
+      "hop_count": 2,
+      "inc_to_cash_min": 89.4,
+      "lh_to_cash_min": 73.4,
+      "status": "COMPLETED",
+      "edge_case_tag": "CROSS_STATE|CROSS_REGION",
+      "filer_cohort": "normal",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-01-10T15:29:31",
+      "complaint_timestamp": "2026-01-10T16:39:11.191481",
+      "available_timestamp": "2026-01-10T17:04:11.191481",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_107",
+        "zone_name": "Srinagar Lal Chowk",
+        "locality": "Lal Chowk / Residency Road",
+        "city": "Srinagar",
+        "district": "Srinagar",
+        "state": "Jammu & Kashmir",
+        "region": "northwest",
+        "lat": 34.0837,
+        "lng": 74.7973,
+        "zone_type": "Tier2City"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0008747",
+          "amount_transferred": 6886.25,
+          "channel": "IMPS",
+          "event_timestamp": "2026-01-10T15:40:06.278691",
+          "available_timestamp": "2026-01-10T16:13:06.278691"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0008689",
+          "amount_transferred": 6886.25,
+          "channel": "UPI",
+          "event_timestamp": "2026-01-10T15:45:26.363787",
+          "available_timestamp": "2026-01-10T16:29:26.363787"
+        }
+      ],
+      "competing_zones": [
+        {
+          "zone_id": "V2_ZID_108",
+          "zone_name": "Jammu Bakshi Nagar",
+          "locality": "Bakshi Nagar / Gandhi Nagar",
+          "city": "Jammu",
+          "district": "Jammu",
+          "state": "Jammu & Kashmir",
+          "region": "northwest",
+          "lat": 32.7266,
+          "lng": 74.857,
+          "zone_type": "Tier2City"
+        },
+        {
+          "zone_id": "V2_ZID_106",
+          "zone_name": "Dharamshala / Kangra",
+          "locality": "Dharamshala city",
+          "city": "Dharamshala",
+          "district": "Kangra",
+          "state": "Himachal Pradesh",
+          "region": "northwest",
+          "lat": 32.219,
+          "lng": 76.3234,
+          "zone_type": "Tier3City"
+        },
+        {
+          "zone_id": "V2_ZID_097",
+          "zone_name": "Amritsar Hall Bazaar",
+          "locality": "Hall Bazaar / Lawrence Road",
+          "city": "Amritsar",
+          "district": "Amritsar",
+          "state": "Punjab",
+          "region": "northwest",
+          "lat": 31.634,
+          "lng": 74.8723,
+          "zone_type": "Metro"
+        }
+      ],
+      "geographic_note": "2-hop cross-region case. Cashout zone is the true destination but nearby zones listed represent M8's competing candidates when registry evidence is sparse."
+    },
+    {
+      "case_key": "C",
+      "label": "Strong registry recurrence \u2014 hotspot target",
+      "description": "8-hop chain targeting a known cybercrime hotspot (Jamtara cluster). High registry reliability due to hotspot entity recurrence. Strong M8 signal.",
+      "complaint_id": "V2CMP_0058394",
+      "typology_id": "TYP_02",
+      "typology_name": "Fake Loan App",
+      "amount_inr": 9407.59,
+      "hop_count": 8,
+      "inc_to_cash_min": 92.9,
+      "lh_to_cash_min": 3.0,
+      "status": "COMPLETED",
+      "edge_case_tag": "LONG_CHAIN|CROSS_STATE|VERY_SHORT_WINDOW|HOTSPOT_TARGET",
+      "filer_cohort": "normal",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-06-01T20:03:19",
+      "complaint_timestamp": "2026-06-01T23:22:22.450955",
+      "available_timestamp": "2026-06-01T23:30:22.450955",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_055",
+        "zone_name": "Bharatpur",
+        "locality": "Bharatpur city centre",
+        "city": "Bharatpur",
+        "district": "Bharatpur",
+        "state": "Rajasthan",
+        "region": "west",
+        "lat": 27.217,
+        "lng": 77.49,
+        "zone_type": "Hotspot"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0036563",
+          "amount_transferred": 6533.21,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-01T20:09:59.515248",
+          "available_timestamp": "2026-06-01T21:10:59.515248"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0036565",
+          "amount_transferred": 6403.42,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-01T20:15:50.601747",
+          "available_timestamp": "2026-06-01T20:50:50.601747"
+        },
+        {
+          "hop_sequence": 3,
+          "to_account": "ACCV2_0036563",
+          "amount_transferred": 3964.66,
+          "channel": "IMPS",
+          "event_timestamp": "2026-06-01T20:23:32.956334",
+          "available_timestamp": "2026-06-01T21:09:32.956334"
+        },
+        {
+          "hop_sequence": 4,
+          "to_account": "ACCV2_0036565",
+          "amount_transferred": 2260.87,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-01T20:29:25.299826",
+          "available_timestamp": "2026-06-01T20:59:25.299826"
+        },
+        {
+          "hop_sequence": 5,
+          "to_account": "ACCV2_0036563",
+          "amount_transferred": 1617.39,
+          "channel": "IMPS",
+          "event_timestamp": "2026-06-01T20:42:29.457188",
+          "available_timestamp": "2026-06-01T22:00:29.457188"
+        },
+        {
+          "hop_sequence": 6,
+          "to_account": "ACCV2_0036563",
+          "amount_transferred": 1575.34,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-01T20:53:15.084321",
+          "available_timestamp": "2026-06-01T22:11:15.084321"
+        },
+        {
+          "hop_sequence": 7,
+          "to_account": "ACCV2_0036563",
+          "amount_transferred": 1188.59,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-01T20:55:59.481143",
+          "available_timestamp": "2026-06-01T21:09:59.481143"
+        },
+        {
+          "hop_sequence": 8,
+          "to_account": "ACCV2_0036564",
+          "amount_transferred": 1188.59,
+          "channel": "IMPS",
+          "event_timestamp": "2026-06-01T21:33:13.610204",
+          "available_timestamp": "2026-06-01T22:25:13.610204"
+        }
+      ]
+    },
+    {
+      "case_key": "D",
+      "label": "Minimal context \u2014 single hop, sparse registry signal",
+      "description": "Single hop, low reuse entity. Tests M8 when registry signal is minimal. Prediction relies heavily on typology prior.",
+      "complaint_id": "V2CMP_0007862",
+      "typology_id": "TYP_04",
+      "typology_name": "Investment / Crypto Scam",
+      "amount_inr": 391989.35,
+      "hop_count": 1,
+      "inc_to_cash_min": 4.0,
+      "lh_to_cash_min": 3.0,
+      "status": "COMPLETED",
+      "edge_case_tag": "CROSS_STATE|CROSS_REGION|VERY_SHORT_WINDOW",
+      "filer_cohort": "fast",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-01-18T18:09:49",
+      "complaint_timestamp": "2026-01-18T20:36:33.200258",
+      "available_timestamp": "2026-01-18T21:10:33.200258",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_021",
+        "zone_name": "Hyderabad Hitech City",
+        "locality": "Hitech City / Madhapur / Gachibowli",
+        "city": "Hyderabad",
+        "district": "Hyderabad",
+        "state": "Telangana",
+        "region": "south",
+        "lat": 17.4435,
+        "lng": 78.3772,
+        "zone_type": "Metro"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0033157",
+          "amount_transferred": 391989.35,
+          "channel": "IMPS",
+          "event_timestamp": "2026-01-18T18:10:49",
+          "available_timestamp": "2026-01-18T19:37:49"
+        }
+      ]
+    },
+    {
+      "case_key": "E",
+      "label": "Very short intervention window (<5 min last-hop\u2192cashout)",
+      "description": "Last-hop\u2192cashout window is <5 min. Tests Time-to-Event model at the extreme left tail of the remaining-time distribution. Urgency indicator.",
+      "complaint_id": "V2CMP_0059340",
+      "typology_id": "TYP_08",
+      "typology_name": "SIM Swap / Account Takeover",
+      "amount_inr": 113342.15,
+      "hop_count": 2,
+      "inc_to_cash_min": 7.5,
+      "lh_to_cash_min": 3.0,
+      "status": "COMPLETED",
+      "edge_case_tag": "CROSS_STATE|CROSS_REGION|VERY_SHORT_WINDOW",
+      "filer_cohort": "normal",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-06-01T07:48:54",
+      "complaint_timestamp": "2026-06-01T10:33:43.590139",
+      "available_timestamp": "2026-06-01T10:59:43.590139",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_051",
+        "zone_name": "Jodhpur Shastri Nagar",
+        "locality": "Shastri Nagar / Sardarpura",
+        "city": "Jodhpur",
+        "district": "Jodhpur",
+        "state": "Rajasthan",
+        "region": "west",
+        "lat": 26.2389,
+        "lng": 73.0243,
+        "zone_type": "Tier2City"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0017618",
+          "amount_transferred": 110857.68,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-01T07:52:22.419648",
+          "available_timestamp": "2026-06-01T08:21:22.419648"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0017618",
+          "amount_transferred": 110857.68,
+          "channel": "IMPS",
+          "event_timestamp": "2026-06-01T07:53:22.419648",
+          "available_timestamp": "2026-06-01T09:04:22.419648"
+        }
+      ]
+    },
+    {
+      "case_key": "F",
+      "label": "Long intervention window (>120 min incident\u2192cashout)",
+      "description": "Incident\u2192cashout > 2 hours. Tests Time-to-Event long-tail coverage. Multiple hop stages available for sequential geographic update.",
+      "complaint_id": "V2CMP_0056153",
+      "typology_id": "TYP_05",
+      "typology_name": "Sextortion",
+      "amount_inr": 90947.34,
+      "hop_count": 2,
+      "inc_to_cash_min": 721.6,
+      "lh_to_cash_min": 227.8,
+      "status": "COMPLETED",
+      "edge_case_tag": "CROSS_STATE|CROSS_REGION|LONG_WINDOW",
+      "filer_cohort": "slow",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-06-26T11:55:16",
+      "complaint_timestamp": "2026-06-29T04:29:12.158540",
+      "available_timestamp": "2026-06-29T04:53:12.158540",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_027",
+        "zone_name": "Kochi Marine Drive",
+        "locality": "Marine Drive / Edapally",
+        "city": "Kochi",
+        "district": "Ernakulam",
+        "state": "Kerala",
+        "region": "south",
+        "lat": 9.9312,
+        "lng": 76.2673,
+        "zone_type": "Metro"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0007168",
+          "amount_transferred": 56354.9,
+          "channel": "IMPS",
+          "event_timestamp": "2026-06-26T12:09:03.335107",
+          "available_timestamp": "2026-06-26T13:39:03.335107"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0007168",
+          "amount_transferred": 56354.9,
+          "channel": "UPI",
+          "event_timestamp": "2026-06-26T20:09:03.335107",
+          "available_timestamp": "2026-06-26T21:00:03.335107"
+        }
+      ]
+    },
+    {
+      "case_key": "G",
+      "label": "Zero-hop upstream trigger \u2014 complaint-only context",
+      "description": "No transaction hops at prediction time. Only complaint context. Tests M8 prior-only path (typology-conditioned base distribution).",
+      "complaint_id": "V2CMP_0000010",
+      "typology_id": "TYP_04",
+      "typology_name": "Investment / Crypto Scam",
+      "amount_inr": 976121.55,
+      "hop_count": 0,
+      "inc_to_cash_min": 9.8,
+      "lh_to_cash_min": 9.8,
+      "status": "COMPLETED",
+      "edge_case_tag": "ZERO_HOP|CROSS_STATE|CROSS_REGION|SHORT_WINDOW",
+      "filer_cohort": "fast",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-01-11T09:58:57",
+      "complaint_timestamp": "2026-01-11T11:16:53.133085",
+      "available_timestamp": "2026-01-11T11:56:53.133085",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_019",
+        "zone_name": "Bengaluru MG Road",
+        "locality": "MG Road / Brigade Road / Koramangala",
+        "city": "Bengaluru",
+        "district": "Bengaluru Urban",
+        "state": "Karnataka",
+        "region": "south",
+        "lat": 12.9716,
+        "lng": 77.5946,
+        "zone_type": "Metro"
+      },
+      "hops": []
+    },
+    {
+      "case_key": "H",
+      "label": "Cross-state long transfer chain (6 hops, cross-region)",
+      "description": "6-hop chain moving money across states and regions. Tests sequential Bayesian update across multiple evidence stages.",
+      "complaint_id": "V2CMP_0000001",
+      "typology_id": "TYP_02",
+      "typology_name": "Fake Loan App",
+      "amount_inr": 13885.52,
+      "hop_count": 6,
+      "inc_to_cash_min": 117.4,
+      "lh_to_cash_min": 37.5,
+      "status": "COMPLETED",
+      "edge_case_tag": "LONG_CHAIN|CROSS_STATE|CROSS_REGION",
+      "filer_cohort": "normal",
+      "complaint_before_cashout": false,
+      "incident_timestamp": "2026-01-04T23:43:07",
+      "complaint_timestamp": "2026-01-05T01:37:18.315604",
+      "available_timestamp": "2026-01-05T01:51:18.315604",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_010",
+        "zone_name": "Kanpur Civil Lines",
+        "locality": "Civil Lines / Swaroop Nagar",
+        "city": "Kanpur",
+        "district": "Kanpur Nagar",
+        "state": "Uttar Pradesh",
+        "region": "north",
+        "lat": 26.4499,
+        "lng": 80.3319,
+        "zone_type": "Metro"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0012749",
+          "amount_transferred": 9892.83,
+          "channel": "UPI",
+          "event_timestamp": "2026-01-04T23:49:01.119011",
+          "available_timestamp": "2026-01-05T00:40:01.119011"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0012749",
+          "amount_transferred": 6043.8,
+          "channel": "UPI",
+          "event_timestamp": "2026-01-04T23:53:19.763142",
+          "available_timestamp": "2026-01-05T00:27:19.763142"
+        },
+        {
+          "hop_sequence": 3,
+          "to_account": "ACCV2_0012749",
+          "amount_transferred": 4045.94,
+          "channel": "NEFT",
+          "event_timestamp": "2026-01-05T00:18:17.324564",
+          "available_timestamp": "2026-01-05T00:30:17.324564"
+        },
+        {
+          "hop_sequence": 4,
+          "to_account": "ACCV2_0012755",
+          "amount_transferred": 3827.46,
+          "channel": "UPI",
+          "event_timestamp": "2026-01-05T00:39:36.898425",
+          "available_timestamp": "2026-01-05T01:10:36.898425"
+        },
+        {
+          "hop_sequence": 5,
+          "to_account": "ACCV2_0041606",
+          "amount_transferred": 3435.25,
+          "channel": "UPI",
+          "event_timestamp": "2026-01-05T00:44:21.307555",
+          "available_timestamp": "2026-01-05T01:08:21.307555"
+        },
+        {
+          "hop_sequence": 6,
+          "to_account": "ACCV2_0012749",
+          "amount_transferred": 3435.25,
+          "channel": "IMPS",
+          "event_timestamp": "2026-01-05T01:03:01.144154",
+          "available_timestamp": "2026-01-05T01:48:01.144154"
+        }
+      ]
+    },
+    {
+      "case_key": "I",
+      "label": "Right-censored / unresolved \u2014 no confirmed cashout within observation window",
+      "description": "Status=CENSORED. No confirmed cashout within 24h observation window. Cashout zone/lat/lng are NOT exposed through canonical events. Tests right-censored survival modeling path (event_observed=False).",
+      "complaint_id": "V2CMP_0000024",
+      "typology_id": "TYP_03",
+      "typology_name": "Part-Time Job Scam",
+      "amount_inr": 83739.29,
+      "hop_count": 1,
+      "inc_to_cash_min": 1444.4,
+      "lh_to_cash_min": 1440.0,
+      "status": "CENSORED",
+      "edge_case_tag": "CROSS_STATE|CROSS_REGION|CENSORED|SHORT_WINDOW",
+      "filer_cohort": "fast",
+      "complaint_before_cashout": true,
+      "incident_timestamp": "2026-01-20T16:04:28",
+      "complaint_timestamp": "2026-01-20T16:37:14.642152",
+      "available_timestamp": "2026-01-20T16:58:14.642152",
+      "cashout_zone": null,
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0031628",
+          "amount_transferred": 83739.29,
+          "channel": "IMPS",
+          "event_timestamp": "2026-01-20T16:08:51.832266",
+          "available_timestamp": "2026-01-20T16:59:51.832266"
+        }
+      ],
+      "censoring_note": "Status=CENSORED. event_timestamp in cashout_events.csv is the observation boundary (last_hop_time + 24h), NOT a real cashout time. cashout_zone lat/lng are generator-internal truth stored in generator_metadata.csv only. The canonical OutcomeEvent has cashout_location=None, event_observed=False."
+    },
+    {
+      "case_key": "J",
+      "label": "Successful intervention \u2014 complaint before cashout, FROZEN",
+      "description": "Complaint arrived before cashout. System flagged and funds were FROZEN. Tests intervention detection and confirmation pathway.",
+      "complaint_id": "V2CMP_0000028",
+      "typology_id": "TYP_06",
+      "typology_name": "Marketplace / OLX Fraud",
+      "amount_inr": 7908.9,
+      "hop_count": 3,
+      "inc_to_cash_min": 144.9,
+      "lh_to_cash_min": 22.5,
+      "status": "FROZEN",
+      "edge_case_tag": "CROSS_STATE|CROSS_REGION|INTERVENTION",
+      "filer_cohort": "fast",
+      "complaint_before_cashout": true,
+      "incident_timestamp": "2026-01-15T13:16:08",
+      "complaint_timestamp": "2026-01-15T14:43:44.592489",
+      "available_timestamp": "2026-01-15T14:59:44.592489",
+      "cashout_zone": {
+        "zone_id": "V2_ZID_052",
+        "zone_name": "Kota City",
+        "locality": "Kota city centre / Vigyan Nagar",
+        "city": "Kota",
+        "district": "Kota",
+        "state": "Rajasthan",
+        "region": "west",
+        "lat": 25.2138,
+        "lng": 75.8648,
+        "zone_type": "Tier2City"
+      },
+      "hops": [
+        {
+          "hop_sequence": 1,
+          "to_account": "ACCV2_0024843",
+          "amount_transferred": 5564.41,
+          "channel": "IMPS",
+          "event_timestamp": "2026-01-15T14:20:09.470535",
+          "available_timestamp": "2026-01-15T15:25:09.470535"
+        },
+        {
+          "hop_sequence": 2,
+          "to_account": "ACCV2_0024842",
+          "amount_transferred": 4820.54,
+          "channel": "UPI",
+          "event_timestamp": "2026-01-15T15:15:23.401849",
+          "available_timestamp": "2026-01-15T16:41:23.401849"
+        },
+        {
+          "hop_sequence": 3,
+          "to_account": "ACCV2_0024842",
+          "amount_transferred": 4820.54,
+          "channel": "IMPS",
+          "event_timestamp": "2026-01-15T15:18:29.601238",
+          "available_timestamp": "2026-01-15T15:47:29.601238"
+        }
+      ]
+    }
+  ]
+}

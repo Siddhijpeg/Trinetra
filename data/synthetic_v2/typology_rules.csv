@@ -1,0 +1,11 @@
+typology_id,name,avg_amount,lognormal_sigma,complaint_lag_hours_median,share
+TYP_01,OTP / KYC Fraud,25000,0.75,1.5,0.14
+TYP_02,Fake Loan App,15000,0.7,4.0,0.11
+TYP_03,Part-Time Job Scam,120000,0.85,6.0,0.11
+TYP_04,Investment / Crypto Scam,500000,0.9,12.0,0.12
+TYP_05,Sextortion,40000,0.8,24.0,0.08
+TYP_06,Marketplace / OLX Fraud,10000,0.7,2.0,0.12
+TYP_07,Digital Arrest,300000,0.85,8.0,0.12
+TYP_08,SIM Swap / Account Takeover,85000,0.8,2.5,0.08
+TYP_09,Romance / Honey Trap Scam,180000,0.95,48.0,0.07
+TYP_10,Courier / Parcel Scam,35000,0.75,3.0,0.05

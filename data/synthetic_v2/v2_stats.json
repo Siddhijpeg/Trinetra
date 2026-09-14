@@ -1,0 +1,452 @@
+{
+  "total_complaints": 60000,
+  "total_hops": 176915,
+  "total_cashout_events": 60000,
+  "total_accounts": 103086,
+  "mule_accounts": 43086,
+  "victim_accounts": 60000,
+  "mule_entities": 18000,
+  "zones": 120,
+  "states": 28,
+  "districts": 116,
+  "regions": 8,
+  "typologies": 10,
+  "syndicates_latent": 904,
+  "splits": {
+    "train": {
+      "complaints": 39220,
+      "hops": 116031
+    },
+    "val": {
+      "complaints": 10412,
+      "hops": 30592
+    },
+    "test": {
+      "complaints": 10368,
+      "hops": 30292
+    }
+  },
+  "status_counts": {
+    "COMPLETED": {
+      "count": 52396,
+      "pct": 87.3
+    },
+    "FROZEN": {
+      "count": 2638,
+      "pct": 4.4
+    },
+    "PARTIAL_FREEZE": {
+      "count": 2285,
+      "pct": 3.8
+    },
+    "CENSORED": {
+      "count": 1621,
+      "pct": 2.7
+    },
+    "REVERSED": {
+      "count": 1060,
+      "pct": 1.8
+    }
+  },
+  "hop_stats": {
+    "mean": 2.95,
+    "median": 3,
+    "max": 8,
+    "zero_hop_count": 2357,
+    "zero_hop_pct": 3.9
+  },
+  "hop_distribution": {
+    "0": {
+      "count": 2357,
+      "pct": 3.9
+    },
+    "1": {
+      "count": 10893,
+      "pct": 18.2
+    },
+    "2": {
+      "count": 13047,
+      "pct": 21.7
+    },
+    "3": {
+      "count": 13234,
+      "pct": 22.1
+    },
+    "4": {
+      "count": 9534,
+      "pct": 15.9
+    },
+    "5": {
+      "count": 6045,
+      "pct": 10.1
+    },
+    "6": {
+      "count": 3025,
+      "pct": 5.0
+    },
+    "7": {
+      "count": 1205,
+      "pct": 2.0
+    },
+    "8": {
+      "count": 660,
+      "pct": 1.1
+    }
+  },
+  "complaint_before_cashout": {
+    "count": 5760,
+    "pct": 9.6
+  },
+  "timing_inc_to_cashout_min": {
+    "p05": 15.1,
+    "p25": 35.0,
+    "p50": 58.5,
+    "p75": 97.1,
+    "p90": 157.1,
+    "p95": 233.4,
+    "mean": 110.8,
+    "max": 1727.6
+  },
+  "timing_buckets": {
+    "<5min": 188,
+    "5-15min": 2774,
+    "15-30min": 8664,
+    "30-60min": 19178,
+    "60-120min": 19081,
+    ">120min": 10115
+  },
+  "typology_distribution": {
+    "TYP_01": {
+      "name": "OTP / KYC Fraud",
+      "count": 8322,
+      "pct": 13.9
+    },
+    "TYP_02": {
+      "name": "Fake Loan App",
+      "count": 6740,
+      "pct": 11.2
+    },
+    "TYP_03": {
+      "name": "Part-Time Job Scam",
+      "count": 6462,
+      "pct": 10.8
+    },
+    "TYP_04": {
+      "name": "Investment / Crypto Scam",
+      "count": 7204,
+      "pct": 12.0
+    },
+    "TYP_05": {
+      "name": "Sextortion",
+      "count": 4699,
+      "pct": 7.8
+    },
+    "TYP_06": {
+      "name": "Marketplace / OLX Fraud",
+      "count": 7184,
+      "pct": 12.0
+    },
+    "TYP_07": {
+      "name": "Digital Arrest",
+      "count": 7300,
+      "pct": 12.2
+    },
+    "TYP_08": {
+      "name": "SIM Swap / Account Takeover",
+      "count": 4834,
+      "pct": 8.1
+    },
+    "TYP_09": {
+      "name": "Romance / Honey Trap Scam",
+      "count": 4258,
+      "pct": 7.1
+    },
+    "TYP_10": {
+      "name": "Courier / Parcel Scam",
+      "count": 2997,
+      "pct": 5.0
+    }
+  },
+  "channel_distribution": {
+    "UPI": {
+      "count": 100752,
+      "pct": 56.9
+    },
+    "IMPS": {
+      "count": 39190,
+      "pct": 22.2
+    },
+    "NEFT": {
+      "count": 16334,
+      "pct": 9.2
+    },
+    "RTGS": {
+      "count": 15147,
+      "pct": 8.6
+    },
+    "MISSING": {
+      "count": 5492,
+      "pct": 3.1
+    }
+  },
+  "amount_stats_inr": {
+    "p10": 9323,
+    "p25": 19280,
+    "p50": 59101,
+    "p75": 219148,
+    "p90": 558682,
+    "p95": 924555,
+    "p99": 2449275,
+    "mean": 232820,
+    "max": 10000000
+  },
+  "entity_tiers": {
+    "D": {
+      "count": 9000,
+      "pct": 50.0
+    },
+    "C": {
+      "count": 4500,
+      "pct": 25.0
+    },
+    "B": {
+      "count": 2160,
+      "pct": 12.0
+    },
+    "E": {
+      "count": 1800,
+      "pct": 10.0
+    },
+    "A": {
+      "count": 540,
+      "pct": 3.0
+    }
+  },
+  "mule_reuse": {
+    "mean": 7.8,
+    "median": 2,
+    "max": 123,
+    "single_use_count": 8339,
+    "single_use_pct": 36.6,
+    "over_10_count": 3567,
+    "over_50_count": 903
+  },
+  "region_distribution": {
+    "south": {
+      "count": 10925,
+      "pct": 18.2
+    },
+    "north": {
+      "count": 10008,
+      "pct": 16.7
+    },
+    "west": {
+      "count": 9838,
+      "pct": 16.4
+    },
+    "east": {
+      "count": 7925,
+      "pct": 13.2
+    },
+    "central": {
+      "count": 6390,
+      "pct": 10.7
+    },
+    "northwest": {
+      "count": 5575,
+      "pct": 9.3
+    },
+    "coastal": {
+      "count": 5188,
+      "pct": 8.6
+    },
+    "northeast": {
+      "count": 4151,
+      "pct": 6.9
+    }
+  },
+  "zone_type_distribution": {
+    "Tier2City": {
+      "count": 23700,
+      "pct": 39.5
+    },
+    "Metro": {
+      "count": 21489,
+      "pct": 35.8
+    },
+    "Tier3City": {
+      "count": 10065,
+      "pct": 16.8
+    },
+    "Hotspot": {
+      "count": 4347,
+      "pct": 7.2
+    },
+    "Transit": {
+      "count": 399,
+      "pct": 0.7
+    }
+  },
+  "top_10_cashout_zones": [
+    {
+      "zone_id": "V2_ZID_063",
+      "zone_name": "Jamtara",
+      "state": "Jharkhand",
+      "type": "Hotspot",
+      "count": 951,
+      "pct": 1.58
+    },
+    {
+      "zone_id": "V2_ZID_019",
+      "zone_name": "Bengaluru MG Road",
+      "state": "Karnataka",
+      "type": "Metro",
+      "count": 926,
+      "pct": 1.54
+    },
+    {
+      "zone_id": "V2_ZID_009",
+      "zone_name": "Lucknow Hazratganj",
+      "state": "Uttar Pradesh",
+      "type": "Metro",
+      "count": 829,
+      "pct": 1.38
+    },
+    {
+      "zone_id": "V2_ZID_021",
+      "zone_name": "Hyderabad Hitech City",
+      "state": "Telangana",
+      "type": "Metro",
+      "count": 821,
+      "pct": 1.37
+    },
+    {
+      "zone_id": "V2_ZID_002",
+      "zone_name": "South Delhi / Saket",
+      "state": "Delhi",
+      "type": "Metro",
+      "count": 770,
+      "pct": 1.28
+    },
+    {
+      "zone_id": "V2_ZID_039",
+      "zone_name": "Mumbai Lower Parel / BKC",
+      "state": "Maharashtra",
+      "type": "Metro",
+      "count": 768,
+      "pct": 1.28
+    },
+    {
+      "zone_id": "V2_ZID_042",
+      "zone_name": "Pune FC Road / Hinjewadi",
+      "state": "Maharashtra",
+      "type": "Metro",
+      "count": 738,
+      "pct": 1.23
+    },
+    {
+      "zone_id": "V2_ZID_003",
+      "zone_name": "Gurugram Sector 29 Cluster",
+      "state": "Haryana",
+      "type": "Metro",
+      "count": 712,
+      "pct": 1.19
+    },
+    {
+      "zone_id": "V2_ZID_001",
+      "zone_name": "Central Delhi ATM Cluster",
+      "state": "Delhi",
+      "type": "Metro",
+      "count": 711,
+      "pct": 1.19
+    },
+    {
+      "zone_id": "V2_ZID_050",
+      "zone_name": "Jaipur C-Scheme / Malviya Nagar",
+      "state": "Rajasthan",
+      "type": "Metro",
+      "count": 702,
+      "pct": 1.17
+    }
+  ],
+  "max_zone_share_pct": 1.58,
+  "min_zone_share_pct": 0.538,
+  "edge_case_tags": {
+    "ZERO_HOP": {
+      "count": 2357,
+      "pct": 3.9
+    },
+    "LONG_CHAIN": {
+      "count": 4890,
+      "pct": 8.2
+    },
+    "CROSS_STATE": {
+      "count": 56925,
+      "pct": 94.9
+    },
+    "CROSS_REGION": {
+      "count": 52053,
+      "pct": 86.8
+    },
+    "SAME_ZONE": {
+      "count": 527,
+      "pct": 0.9
+    },
+    "INTERVENTION": {
+      "count": 2638,
+      "pct": 4.4
+    },
+    "CENSORED": {
+      "count": 1621,
+      "pct": 2.7
+    },
+    "VERY_SHORT_WINDOW": {
+      "count": 3346,
+      "pct": 5.6
+    },
+    "SHORT_WINDOW": {
+      "count": 18585,
+      "pct": 31.0
+    },
+    "LONG_WINDOW": {
+      "count": 3352,
+      "pct": 5.6
+    },
+    "HOTSPOT_TARGET": {
+      "count": 4347,
+      "pct": 7.2
+    }
+  },
+  "missingness": {
+    "channel_pct": 3.1,
+    "institution_pct": 8.0,
+    "victim_district_pct": 2.0
+  },
+  "complaint_delay_cohorts": {
+    "fast_under2h": {
+      "count": 16845,
+      "pct": 28.1
+    },
+    "normal_2_to_12h": {
+      "count": 23812,
+      "pct": 39.7
+    },
+    "slow_over12h": {
+      "count": 19343,
+      "pct": 32.2
+    }
+  },
+  "intervention_total_pct": 8.2,
+  "censored_pct": 2.7,
+  "lat_lng_coverage": {
+    "zone_catalog": 120,
+    "cashout_events": 60000,
+    "hops": 0
+  },
+  "validation": {
+    "checks_passed": 70,
+    "checks_failed": 0,
+    "warnings": 1,
+    "warning_detail": "1558 cases >24h remaining at T0 (acceptable outliers)"
+  }
+}

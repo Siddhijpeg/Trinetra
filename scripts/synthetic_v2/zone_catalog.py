@@ -1,0 +1,342 @@
+"""
+TRINETRA Synthetic V2 — Zone Catalog
+=====================================
+120 named Indian districts / operational zones with:
+  - zone_id        : stable identifier (V2_ZID_001 … V2_ZID_120)
+  - zone_name      : human-readable cash-out zone label
+  - locality       : sub-zone landmark / ATM cluster area
+  - city           : nearest city
+  - district       : revenue district
+  - state          : Indian state
+  - region         : broad region (north / south / east / west / central / northeast / northwest / coastal)
+  - lat / lng      : accurate centroid coordinates
+  - zone_type      : Metro | Hotspot | Tier2City | Tier3City | Transit | Coastal | Rural
+  - min_share      : minimum cashout fraction (floor)
+  - max_share      : maximum cashout fraction (cap)
+  - preferred_by_typologies : list of TYP IDs that preferentially cash out here
+
+Design principles:
+  - No "District-N" placeholders — every entry is a real Indian location
+  - Lat/lng verified against known district centroids (±0.1° precision)
+  - 8 geographic regions, minimum 10 zones each
+  - Hotspot zones (known cybercrime hubs) capped at 3× floor weight
+  - No zone exceeds 5% of all cashouts; every zone gets ≥ 0.2%
+  - This catalog is the single source of truth for geographic data in V2
+"""
+
+# Format: (zone_id, zone_name, locality, city, district, state, region,
+#           lat, lng, zone_type, min_share, max_share, preferred_typologies)
+# min/max shares are DESIGN TARGETS used by the generator weight table.
+
+ZONE_CATALOG = [
+
+    # ── NORTH — Delhi NCR + UP + Haryana (18 zones) ──────────────────────────
+    ("V2_ZID_001", "Central Delhi ATM Cluster", "Connaught Place", "New Delhi", "Central Delhi", "Delhi", "north",
+     28.6315, 77.2167, "Metro", 0.028, 0.050, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_002", "South Delhi / Saket", "Saket / Malviya Nagar", "New Delhi", "South Delhi", "Delhi", "north",
+     28.5245, 77.2066, "Metro", 0.028, 0.050, ["TYP_04", "TYP_07", "TYP_09"]),
+    ("V2_ZID_003", "Gurugram Sector 29 Cluster", "Sector 29 / Sector 43", "Gurugram", "Gurugram", "Haryana", "north",
+     28.4595, 77.0266, "Metro", 0.030, 0.050, ["TYP_04", "TYP_07", "TYP_03"]),
+    ("V2_ZID_004", "Noida Sector 18", "Sector 18 / Sector 62", "Noida", "Gautam Buddha Nagar", "Uttar Pradesh", "north",
+     28.5706, 77.3261, "Metro", 0.022, 0.045, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_005", "Mewat / Nuh", "Nuh town", "Nuh", "Nuh", "Haryana", "north",
+     28.0163, 77.0263, "Hotspot", 0.018, 0.038, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_006", "Mathura / Vrindavan", "Mathura bus stand cluster", "Mathura", "Mathura", "Uttar Pradesh", "north",
+     27.4924, 77.6737, "Hotspot", 0.012, 0.028, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_007", "Ghaziabad Vaishali", "Vaishali / Indirapuram", "Ghaziabad", "Ghaziabad", "Uttar Pradesh", "north",
+     28.6458, 77.3634, "Metro", 0.018, 0.038, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_008", "Faridabad NIT", "NIT Faridabad / Sector 21", "Faridabad", "Faridabad", "Haryana", "north",
+     28.4089, 77.3178, "Tier2City", 0.010, 0.025, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_009", "Lucknow Hazratganj", "Hazratganj / Gomti Nagar", "Lucknow", "Lucknow", "Uttar Pradesh", "north",
+     26.8467, 80.9462, "Metro", 0.022, 0.045, ["TYP_04", "TYP_07", "TYP_09"]),
+    ("V2_ZID_010", "Kanpur Civil Lines", "Civil Lines / Swaroop Nagar", "Kanpur", "Kanpur Nagar", "Uttar Pradesh", "north",
+     26.4499, 80.3319, "Metro", 0.015, 0.032, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_011", "Varanasi Sigra", "Sigra / Lanka / Godowlia", "Varanasi", "Varanasi", "Uttar Pradesh", "north",
+     25.3176, 82.9739, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_012", "Allahabad Civil Lines", "Civil Lines", "Prayagraj", "Prayagraj", "Uttar Pradesh", "north",
+     25.4358, 81.8463, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_07"]),
+    ("V2_ZID_013", "Agra Sanjay Place", "Sanjay Place / Nehru Nagar", "Agra", "Agra", "Uttar Pradesh", "north",
+     27.1767, 78.0081, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_014", "Chandigarh Sector 17", "Sector 17 / Sector 22", "Chandigarh", "Chandigarh", "Chandigarh", "north",
+     30.7333, 76.7794, "Metro", 0.014, 0.030, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_015", "Panipat / Karnal", "Panipat bus stand cluster", "Panipat", "Panipat", "Haryana", "north",
+     29.3909, 76.9635, "Tier2City", 0.008, 0.020, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_016", "Rohtak / Jhajjar", "Rohtak city centre", "Rohtak", "Rohtak", "Haryana", "north",
+     28.8955, 76.6066, "Tier2City", 0.008, 0.020, ["TYP_01", "TYP_05", "TYP_06"]),
+    ("V2_ZID_017", "Muzaffarnagar", "Court Road cluster", "Muzaffarnagar", "Muzaffarnagar", "Uttar Pradesh", "north",
+     29.4727, 77.7085, "Tier3City", 0.006, 0.016, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_018", "Meerut Sadar Bazar", "Sadar Bazar / Hapur Road", "Meerut", "Meerut", "Uttar Pradesh", "north",
+     28.9845, 77.7064, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_03"]),
+
+    # ── SOUTH — Karnataka / TN / Telangana / AP / Kerala (20 zones) ──────────
+    ("V2_ZID_019", "Bengaluru MG Road", "MG Road / Brigade Road / Koramangala", "Bengaluru", "Bengaluru Urban", "Karnataka", "south",
+     12.9716, 77.5946, "Metro", 0.030, 0.050, ["TYP_04", "TYP_07", "TYP_08"]),
+    ("V2_ZID_020", "Bengaluru Whitefield", "Whitefield / ITPL / Marathahalli", "Bengaluru", "Bengaluru Urban", "Karnataka", "south",
+     12.9698, 77.7499, "Metro", 0.018, 0.038, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_021", "Hyderabad Hitech City", "Hitech City / Madhapur / Gachibowli", "Hyderabad", "Hyderabad", "Telangana", "south",
+     17.4435, 78.3772, "Metro", 0.028, 0.050, ["TYP_04", "TYP_07", "TYP_08"]),
+    ("V2_ZID_022", "Hyderabad Old City / Charminar", "Charminar / Laad Bazaar", "Hyderabad", "Hyderabad", "Telangana", "south",
+     17.3616, 78.4747, "Metro", 0.012, 0.025, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_023", "Chennai T Nagar", "T Nagar / Anna Nagar / Vadapalani", "Chennai", "Chennai", "Tamil Nadu", "south",
+     13.0418, 80.2341, "Metro", 0.025, 0.048, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_024", "Chennai OMR IT Corridor", "Sholinganallur / Perungudi", "Chennai", "Chennai", "Tamil Nadu", "south",
+     12.9010, 80.2279, "Metro", 0.014, 0.028, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_025", "Coimbatore RS Puram", "RS Puram / Gandhipuram", "Coimbatore", "Coimbatore", "Tamil Nadu", "south",
+     11.0168, 76.9558, "Tier2City", 0.010, 0.022, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_026", "Madurai", "Madurai city centre / Tallakulam", "Madurai", "Madurai", "Tamil Nadu", "south",
+     9.9252,  78.1198, "Tier2City", 0.008, 0.018, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_027", "Kochi Marine Drive", "Marine Drive / Edapally", "Kochi", "Ernakulam", "Kerala", "south",
+     9.9312,  76.2673, "Metro", 0.016, 0.033, ["TYP_04", "TYP_09"]),
+    ("V2_ZID_028", "Thiruvananthapuram", "Kazhakkoottam / Technopark", "Thiruvananthapuram", "Thiruvananthapuram", "Kerala", "south",
+     8.5241,  76.9366, "Metro", 0.012, 0.025, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_029", "Kozhikode City", "Calicut city centre / Mavoor Road", "Kozhikode", "Kozhikode", "Kerala", "south",
+     11.2588, 75.7804, "Tier2City", 0.006, 0.015, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_030", "Vijayawada Governorpet", "Governorpet / Labbipet", "Vijayawada", "Krishna", "Andhra Pradesh", "south",
+     16.5062, 80.6480, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_031", "Visakhapatnam Steel Plant Area", "Gajuwaka / Steel Plant", "Visakhapatnam", "Visakhapatnam", "Andhra Pradesh", "south",
+     17.6868, 83.2185, "Tier2City", 0.010, 0.022, ["TYP_03", "TYP_04"]),
+    ("V2_ZID_032", "Mysuru Lashkar Mohalla", "Lashkar / Devaraja Market", "Mysuru", "Mysuru", "Karnataka", "south",
+     12.2958, 76.6394, "Tier2City", 0.008, 0.018, ["TYP_06", "TYP_01"]),
+    ("V2_ZID_033", "Hubballi CBD", "Central Business District", "Hubballi", "Dharwad", "Karnataka", "south",
+     15.3647, 75.1240, "Tier2City", 0.006, 0.015, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_034", "Nellore / Tirupati", "Tirupati bus stand", "Tirupati", "Tirupati", "Andhra Pradesh", "south",
+     13.6288, 79.4192, "Tier3City", 0.005, 0.012, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_035", "Warangal City", "Hanmakonda / Kazipet", "Warangal", "Hanumakonda", "Telangana", "south",
+     18.0000, 79.5882, "Tier2City", 0.006, 0.015, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_036", "Bengaluru Electronic City", "Electronic City / Hosur Road", "Bengaluru", "Bengaluru Urban", "Karnataka", "south",
+     12.8399, 77.6770, "Metro", 0.012, 0.025, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_037", "Thrissur", "Thrissur Round / Poothole", "Thrissur", "Thrissur", "Kerala", "south",
+     10.5276, 76.2144, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_038", "Kurnool / Anantapur", "Kurnool city", "Kurnool", "Kurnool", "Andhra Pradesh", "south",
+     15.8281, 78.0373, "Tier3City", 0.004, 0.010, ["TYP_06", "TYP_02"]),
+
+    # ── WEST — Maharashtra / Gujarat / Rajasthan west (18 zones) ─────────────
+    ("V2_ZID_039", "Mumbai Lower Parel / BKC", "BKC / Lower Parel / Bandra", "Mumbai", "Mumbai City", "Maharashtra", "west",
+     19.0596, 72.8295, "Metro", 0.028, 0.050, ["TYP_04", "TYP_07", "TYP_08"]),
+    ("V2_ZID_040", "Mumbai Andheri / Jogeshwari", "Andheri West / Jogeshwari", "Mumbai", "Mumbai Suburban", "Maharashtra", "west",
+     19.1136, 72.8697, "Metro", 0.020, 0.040, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_041", "Mumbai Thane", "Thane West / Pokhran Road", "Thane", "Thane", "Maharashtra", "west",
+     19.2183, 72.9781, "Metro", 0.016, 0.033, ["TYP_04", "TYP_08"]),
+    ("V2_ZID_042", "Pune FC Road / Hinjewadi", "FC Road / Hinjewadi IT Park", "Pune", "Pune", "Maharashtra", "west",
+     18.5630, 73.8113, "Metro", 0.022, 0.045, ["TYP_04", "TYP_07", "TYP_08"]),
+    ("V2_ZID_043", "Nashik CB Stand", "Gangapur Road / CBS", "Nashik", "Nashik", "Maharashtra", "west",
+     19.9975, 73.7898, "Tier2City", 0.010, 0.022, ["TYP_03", "TYP_01"]),
+    ("V2_ZID_044", "Nagpur Dharampeth", "Dharampeth / Sitabuldi", "Nagpur", "Nagpur", "Maharashtra", "west",
+     21.1458, 79.0882, "Tier2City", 0.012, 0.025, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_045", "Aurangabad MIDC", "Waluj MIDC / Cidco", "Aurangabad", "Aurangabad (Chh.Sambhajinagar)", "Maharashtra", "west",
+     19.8762, 75.3433, "Tier2City", 0.008, 0.018, ["TYP_03", "TYP_01"]),
+    ("V2_ZID_046", "Ahmedabad SG Highway", "SG Road / Prahlad Nagar / CG Road", "Ahmedabad", "Ahmedabad", "Gujarat", "west",
+     23.0325, 72.5073, "Metro", 0.022, 0.045, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_047", "Surat Varachha", "Varachha / Adajan", "Surat", "Surat", "Gujarat", "west",
+     21.1702, 72.8311, "Metro", 0.016, 0.033, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_048", "Vadodara Alkapuri", "Alkapuri / Fatehgunj", "Vadodara", "Vadodara", "Gujarat", "west",
+     22.3119, 73.1723, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_049", "Rajkot Kalawad Road", "Kalawad Road / Bhakti Nagar", "Rajkot", "Rajkot", "Gujarat", "west",
+     22.3039, 70.8022, "Tier2City", 0.008, 0.018, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_050", "Jaipur C-Scheme / Malviya Nagar", "C-Scheme / Malviya Nagar / Tonk Road", "Jaipur", "Jaipur", "Rajasthan", "west",
+     26.9124, 75.7873, "Metro", 0.022, 0.045, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_051", "Jodhpur Shastri Nagar", "Shastri Nagar / Sardarpura", "Jodhpur", "Jodhpur", "Rajasthan", "west",
+     26.2389, 73.0243, "Tier2City", 0.010, 0.022, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_052", "Kota City", "Kota city centre / Vigyan Nagar", "Kota", "Kota", "Rajasthan", "west",
+     25.2138, 75.8648, "Tier2City", 0.008, 0.018, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_053", "Udaipur / Bhilwara", "Udaipur city", "Udaipur", "Udaipur", "Rajasthan", "west",
+     24.5854, 73.7125, "Tier2City", 0.006, 0.015, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_054", "Alwar", "Alwar bus stand / railway area", "Alwar", "Alwar", "Rajasthan", "west",
+     27.5530, 76.6346, "Hotspot", 0.012, 0.026, ["TYP_01", "TYP_05", "TYP_06"]),
+    ("V2_ZID_055", "Bharatpur", "Bharatpur city centre", "Bharatpur", "Bharatpur", "Rajasthan", "west",
+     27.2170, 77.4900, "Hotspot", 0.010, 0.024, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_056", "Gandhinagar", "Gandhinagar Sector 11", "Gandhinagar", "Gandhinagar", "Gujarat", "west",
+     23.2156, 72.6369, "Tier2City", 0.006, 0.015, ["TYP_04", "TYP_08"]),
+
+    # ── EAST — West Bengal / Bihar / Odisha / Jharkhand (16 zones) ───────────
+    ("V2_ZID_057", "Kolkata Salt Lake", "Salt Lake / New Town / Sector V", "Kolkata", "North 24 Parganas", "West Bengal", "east",
+     22.5726, 88.3639, "Metro", 0.025, 0.048, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_058", "Kolkata Esplanade", "Esplanade / Park Street / BBD Bagh", "Kolkata", "Kolkata", "West Bengal", "east",
+     22.5645, 88.3502, "Metro", 0.014, 0.030, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_059", "Patna Boring Road", "Boring Road / Kankarbagh", "Patna", "Patna", "Bihar", "east",
+     25.6093, 85.1376, "Metro", 0.016, 0.033, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_060", "Muzaffarpur", "Mithanpura / Motijheel", "Muzaffarpur", "Muzaffarpur", "Bihar", "east",
+     26.1209, 85.3647, "Tier2City", 0.008, 0.018, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_061", "Gaya / Bodh Gaya", "Station Road Gaya", "Gaya", "Gaya", "Bihar", "east",
+     24.7914, 84.9994, "Tier3City", 0.006, 0.014, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_062", "Bhagalpur", "City centre / Tilkamanjhi", "Bhagalpur", "Bhagalpur", "Bihar", "east",
+     25.2425, 86.9842, "Tier3City", 0.005, 0.012, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_063", "Jamtara", "Jamtara town / Nala", "Jamtara", "Jamtara", "Jharkhand", "east",
+     23.9625, 86.8021, "Hotspot", 0.015, 0.030, ["TYP_01", "TYP_05", "TYP_02"]),
+    ("V2_ZID_064", "Deoghar", "Deoghar city / Jasidih", "Deoghar", "Deoghar", "Jharkhand", "east",
+     24.4818, 86.6974, "Hotspot", 0.013, 0.028, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_065", "Ranchi City", "Main Road / Kanke Road", "Ranchi", "Ranchi", "Jharkhand", "east",
+     23.3441, 85.3096, "Metro", 0.010, 0.022, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_066", "Dhanbad", "Bank More / Jharia", "Dhanbad", "Dhanbad", "Jharkhand", "east",
+     23.7957, 86.4304, "Tier2City", 0.007, 0.016, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_067", "Bhubaneswar Jaydev Vihar", "Jaydev Vihar / Saheed Nagar", "Bhubaneswar", "Khordha", "Odisha", "east",
+     20.2961, 85.8245, "Metro", 0.012, 0.025, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_068", "Cuttack Buxi Bazar", "Buxi Bazar / Badambadi", "Cuttack", "Cuttack", "Odisha", "east",
+     20.4625, 85.8828, "Tier2City", 0.007, 0.016, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_069", "Dhenkanal / Angul", "Dhenkanal town", "Dhenkanal", "Dhenkanal", "Odisha", "east",
+     20.6530, 85.5981, "Hotspot", 0.008, 0.018, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_070", "Siliguri", "Siliguri City Centre / Sevoke Road", "Siliguri", "Darjeeling", "West Bengal", "east",
+     26.7271, 88.3953, "Transit", 0.008, 0.018, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_071", "Asansol Burnpur", "Burnpur / Kulti", "Asansol", "Paschim Bardhaman", "West Bengal", "east",
+     23.6739, 86.9524, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_072", "Katihar", "Katihar town / railway junction", "Katihar", "Katihar", "Bihar", "east",
+     25.5458, 87.5819, "Hotspot", 0.007, 0.016, ["TYP_01", "TYP_06"]),
+
+    # ── CENTRAL — MP / Chhattisgarh / East Rajasthan (14 zones) ──────────────
+    ("V2_ZID_073", "Bhopal MP Nagar", "MP Nagar / New Market", "Bhopal", "Bhopal", "Madhya Pradesh", "central",
+     23.2599, 77.4126, "Metro", 0.014, 0.028, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_074", "Indore Vijay Nagar", "Vijay Nagar / LIG Colony", "Indore", "Indore", "Madhya Pradesh", "central",
+     22.7196, 75.8577, "Metro", 0.016, 0.033, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_075", "Jabalpur Napier Town", "Napier Town / Civil Lines", "Jabalpur", "Jabalpur", "Madhya Pradesh", "central",
+     23.1815, 79.9864, "Tier2City", 0.007, 0.016, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_076", "Gwalior Lashkar", "Lashkar / Morar", "Gwalior", "Gwalior", "Madhya Pradesh", "central",
+     26.2183, 78.1828, "Tier2City", 0.007, 0.016, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_077", "Sagar / Damoh", "Sagar city", "Sagar", "Sagar", "Madhya Pradesh", "central",
+     23.8388, 78.7378, "Tier3City", 0.004, 0.010, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_078", "Raipur Shankar Nagar", "Shankar Nagar / Devendra Nagar", "Raipur", "Raipur", "Chhattisgarh", "central",
+     21.2514, 81.6296, "Metro", 0.010, 0.022, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_079", "Bilaspur Vyapar Vihar", "Vyapar Vihar / Torwa", "Bilaspur", "Bilaspur", "Chhattisgarh", "central",
+     22.0797, 82.1409, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_080", "Jalgaon / Dhule", "Jalgaon city", "Jalgaon", "Jalgaon", "Maharashtra", "central",
+     21.0077, 75.5626, "Tier3City", 0.004, 0.010, ["TYP_06", "TYP_02"]),
+    ("V2_ZID_081", "Ujjain Nanakheda", "Nanakheda / Freeganj", "Ujjain", "Ujjain", "Madhya Pradesh", "central",
+     23.1765, 75.7885, "Tier3City", 0.004, 0.010, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_082", "Ajmer", "Ajmer city centre / Nasirabad", "Ajmer", "Ajmer", "Rajasthan", "central",
+     26.4499, 74.6399, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_083", "Bikaner Kotwali", "Kotwali / Rani Bazaar", "Bikaner", "Bikaner", "Rajasthan", "central",
+     28.0229, 73.3119, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_084", "Korba / Raigarh", "Korba SECL area", "Korba", "Korba", "Chhattisgarh", "central",
+     22.3595, 82.7501, "Tier3City", 0.004, 0.010, ["TYP_03", "TYP_05"]),
+    ("V2_ZID_085", "Durg / Bhilai", "Bhilai sector", "Durg", "Durg", "Chhattisgarh", "central",
+     21.1904, 81.3509, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_086", "Satna / Rewa", "Satna city centre", "Satna", "Satna", "Madhya Pradesh", "central",
+     24.5738, 80.8320, "Tier3City", 0.004, 0.010, ["TYP_01", "TYP_05"]),
+
+    # ── NORTHEAST — Assam / Meghalaya / Manipur / Tripura (10 zones) ─────────
+    ("V2_ZID_087", "Guwahati Zoo Road", "Zoo Road / Bhangagarh / Dispur", "Guwahati", "Kamrup Metro", "Assam", "northeast",
+     26.1445, 91.7362, "Metro", 0.010, 0.022, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_088", "Dibrugarh", "AT Road / Chowkidinghee", "Dibrugarh", "Dibrugarh", "Assam", "northeast",
+     27.4728, 94.9120, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_089", "Silchar Rangirkhari", "Rangirkhari / PB Road", "Silchar", "Cachar", "Assam", "northeast",
+     24.8333, 92.7789, "Tier2City", 0.004, 0.010, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_090", "Shillong Police Bazaar", "Police Bazaar / Laitumkhrah", "Shillong", "East Khasi Hills", "Meghalaya", "northeast",
+     25.5788, 91.8933, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_091", "Imphal Paona Bazaar", "Paona Bazaar / BT Road", "Imphal", "Imphal West", "Manipur", "northeast",
+     24.8170, 93.9368, "Tier2City", 0.004, 0.010, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_092", "Agartala City", "Krishna Nagar / Battala", "Agartala", "West Tripura", "Tripura", "northeast",
+     23.8315, 91.2868, "Tier2City", 0.004, 0.010, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_093", "Jorhat / Sibsagar", "AT Road Jorhat", "Jorhat", "Jorhat", "Assam", "northeast",
+     26.7509, 94.2037, "Tier3City", 0.003, 0.008, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_094", "Tezpur / Nagaon", "Tezpur town", "Tezpur", "Sonitpur", "Assam", "northeast",
+     26.6338, 92.7926, "Tier3City", 0.003, 0.008, ["TYP_06", "TYP_02"]),
+    ("V2_ZID_095", "Kohima", "High School Colony / NST stand", "Kohima", "Kohima", "Nagaland", "northeast",
+     25.6701, 94.1077, "Tier3City", 0.002, 0.007, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_096", "Aizawl Zarkawt", "Zarkawt / Bungkawn", "Aizawl", "Aizawl", "Mizoram", "northeast",
+     23.7271, 92.7176, "Tier3City", 0.002, 0.007, ["TYP_01", "TYP_09"]),
+
+    # ── NORTHWEST — Punjab / Haryana non-NCR / Himachal Pradesh (12 zones) ───
+    ("V2_ZID_097", "Amritsar Hall Bazaar", "Hall Bazaar / Lawrence Road", "Amritsar", "Amritsar", "Punjab", "northwest",
+     31.6340, 74.8723, "Metro", 0.014, 0.028, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_098", "Ludhiana Feroze Gandhi Market", "Feroze Gandhi Market / Sarabha Nagar", "Ludhiana", "Ludhiana", "Punjab", "northwest",
+     30.9010, 75.8573, "Metro", 0.016, 0.033, ["TYP_04", "TYP_03"]),
+    ("V2_ZID_099", "Jalandhar Model Town", "Model Town / Lajpat Nagar", "Jalandhar", "Jalandhar", "Punjab", "northwest",
+     31.3260, 75.5762, "Tier2City", 0.010, 0.022, ["TYP_04", "TYP_07"]),
+    ("V2_ZID_100", "Patiala Leela Bhawan", "Leela Bhawan / Urban Estate", "Patiala", "Patiala", "Punjab", "northwest",
+     30.3398, 76.3869, "Tier2City", 0.007, 0.016, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_101", "Bathinda", "Bathinda bus stand / Goniana Road", "Bathinda", "Bathinda", "Punjab", "northwest",
+     30.2110, 74.9455, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_102", "Hoshiarpur", "Hoshiarpur city centre", "Hoshiarpur", "Hoshiarpur", "Punjab", "northwest",
+     31.5143, 75.9114, "Tier3City", 0.004, 0.010, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_103", "Hisar", "Hisar main market / Urban Estate", "Hisar", "Hisar", "Haryana", "northwest",
+     29.1492, 75.7217, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_104", "Ambala Cantonment", "Ambala Cantt / Model Town", "Ambala", "Ambala", "Haryana", "northwest",
+     30.3782, 76.7767, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_06"]),
+    ("V2_ZID_105", "Shimla Lower Bazaar", "Lower Bazaar / Lakkar Bazaar", "Shimla", "Shimla", "Himachal Pradesh", "northwest",
+     31.1048, 77.1734, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_106", "Dharamshala / Kangra", "Dharamshala city", "Dharamshala", "Kangra", "Himachal Pradesh", "northwest",
+     32.2190, 76.3234, "Tier3City", 0.003, 0.008, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_107", "Srinagar Lal Chowk", "Lal Chowk / Residency Road", "Srinagar", "Srinagar", "Jammu & Kashmir", "northwest",
+     34.0837, 74.7973, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_04"]),
+    ("V2_ZID_108", "Jammu Bakshi Nagar", "Bakshi Nagar / Gandhi Nagar", "Jammu", "Jammu", "Jammu & Kashmir", "northwest",
+     32.7266, 74.8570, "Tier2City", 0.006, 0.014, ["TYP_01", "TYP_07"]),
+
+    # ── COASTAL — Kerala coast / Goa / Konkan / Andhra coast (12 zones) ──────
+    ("V2_ZID_109", "Mangaluru Hampankatta", "Hampankatta / Lalbagh", "Mangaluru", "Dakshina Kannada", "Karnataka", "coastal",
+     12.8698, 74.8432, "Tier2City", 0.007, 0.016, ["TYP_04", "TYP_09"]),
+    ("V2_ZID_110", "Panaji Fontainhas", "Fontainhas / Panjim Market", "Panaji", "North Goa", "Goa", "coastal",
+     15.4909, 73.8278, "Tier2City", 0.005, 0.012, ["TYP_04", "TYP_09"]),
+    ("V2_ZID_111", "Ratnagiri / Chiplun", "Ratnagiri bus stand", "Ratnagiri", "Ratnagiri", "Maharashtra", "coastal",
+     16.9902, 73.3120, "Tier3City", 0.003, 0.008, ["TYP_06", "TYP_01"]),
+    ("V2_ZID_112", "Kollam", "Kollam city / Chinnakada", "Kollam", "Kollam", "Kerala", "coastal",
+     8.8932,  76.6141, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_113", "Kannur", "Kannur town / Caltex Junction", "Kannur", "Kannur", "Kerala", "coastal",
+     11.8745, 75.3704, "Tier2City", 0.004, 0.010, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_114", "Palakkad / Malappuram", "Palakkad bus stand", "Palakkad", "Palakkad", "Kerala", "coastal",
+     10.7867, 76.6548, "Tier3City", 0.003, 0.008, ["TYP_01", "TYP_02"]),
+    ("V2_ZID_115", "Udupi", "Udupi town / SC Road", "Udupi", "Udupi", "Karnataka", "coastal",
+     13.3409, 74.7421, "Tier3City", 0.003, 0.008, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_116", "Kakinada / Rajahmundry", "Kakinada main road", "Kakinada", "East Godavari", "Andhra Pradesh", "coastal",
+     16.9891, 82.2475, "Tier2City", 0.005, 0.012, ["TYP_01", "TYP_03"]),
+    ("V2_ZID_117", "Ongole / Nellore", "Ongole city", "Ongole", "Prakasam", "Andhra Pradesh", "coastal",
+     15.5057, 80.0499, "Tier3City", 0.003, 0.008, ["TYP_06", "TYP_01"]),
+    ("V2_ZID_118", "Vizianagaram", "Vizianagaram town", "Vizianagaram", "Vizianagaram", "Andhra Pradesh", "coastal",
+     18.1066, 83.3956, "Tier3City", 0.003, 0.008, ["TYP_01", "TYP_05"]),
+    ("V2_ZID_119", "Puri / Konark", "Puri sea-beach cluster", "Puri", "Puri", "Odisha", "coastal",
+     19.8135, 85.8312, "Tier3City", 0.003, 0.008, ["TYP_01", "TYP_09"]),
+    ("V2_ZID_120", "Srikakulam / Ichapur", "Srikakulam town", "Srikakulam", "Srikakulam", "Andhra Pradesh", "coastal",
+     18.2949, 83.8938, "Tier3City", 0.002, 0.007, ["TYP_01", "TYP_06"]),
+]
+
+# ── Public dataframe builder ──────────────────────────────────────────────────
+import pandas as pd
+
+ZONE_COLUMNS = [
+    "zone_id", "zone_name", "locality", "city", "district", "state", "region",
+    "lat", "lng", "zone_type", "min_share", "max_share", "preferred_typologies"
+]
+
+def get_zone_df() -> pd.DataFrame:
+    rows = []
+    for entry in ZONE_CATALOG:
+        rows.append({
+            "zone_id":               entry[0],
+            "zone_name":             entry[1],
+            "locality":              entry[2],
+            "city":                  entry[3],
+            "district":              entry[4],
+            "state":                 entry[5],
+            "region":                entry[6],
+            "lat":                   entry[7],
+            "lng":                   entry[8],
+            "zone_type":             entry[9],
+            "min_share":             entry[10],
+            "max_share":             entry[11],
+            "preferred_typologies":  ",".join(entry[12]),
+        })
+    return pd.DataFrame(rows)
+
+def get_zone_lookup() -> dict:
+    """Returns dict: zone_id → zone row dict (without preferred_typologies list)."""
+    return {
+        entry[0]: {
+            "zone_id":    entry[0], "zone_name": entry[1], "locality": entry[2],
+            "city":       entry[3], "district":  entry[4], "state":    entry[5],
+            "region":     entry[6], "lat":        entry[7], "lng":      entry[8],
+            "zone_type":  entry[9], "min_share": entry[10], "max_share": entry[11],
+        }
+        for entry in ZONE_CATALOG
+    }
+
+def get_zone_preferred_typologies() -> dict:
+    """Returns dict: zone_id → list of preferred typology IDs."""
+    return {entry[0]: entry[12] for entry in ZONE_CATALOG}
+
+if __name__ == "__main__":
+    df = get_zone_df()
+    print(f"Total zones: {len(df)}")
+    print(f"Unique states: {df['state'].nunique()}")
+    print(f"Unique regions: {df['region'].nunique()}")
+    print(f"Zone types:\n{df['zone_type'].value_counts()}")
+    print(f"Regions:\n{df['region'].value_counts()}")
+    print(f"\nLat range: [{df['lat'].min():.2f}, {df['lat'].max():.2f}]")
+    print(f"Lng range: [{df['lng'].min():.2f}, {df['lng'].max():.2f}]")

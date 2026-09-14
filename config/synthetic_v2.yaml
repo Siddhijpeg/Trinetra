@@ -1,0 +1,270 @@
+# ─── TRINETRA Synthetic Dataset V2 Configuration ─────────────────────────────
+# Reproducible generation config. Change seed to get a different but equally
+# valid dataset. Do NOT modify after generation without bumping version.
+#
+# Version: 2.0
+# Baseline audit: docs/data/SYNTHETIC_DATA_AUDIT_V2.md
+# Generator:      scripts/synthetic_v2/generate_synthetic_v2.py
+# Validator:      scripts/synthetic_v2/validate_synthetic_v2.py
+
+generation:
+  seed: 2026
+  version: "v2"
+  num_complaints: 60000
+  num_syndicates: 200
+  time_range_months: 6         # Jan–Jun 2026
+  base_date: "2026-01-01"
+  case_id_prefix: "V2CMP"      # avoids collision with V1 CMP_ prefix
+  out_dir: "data/synthetic_v2"
+
+# ─── Geographic ───────────────────────────────────────────────────────────────
+# V2 uses a 120-zone catalog defined in scripts/synthetic_v2/zone_catalog.py.
+# Zone hierarchy: country → region → state → district → zone_name → lat/lng.
+# Each zone has: zone_id, zone_name, locality, city, district, state, region,
+#                lat, lng, zone_type, min_cashout_share, max_cashout_share.
+#
+# Design principles:
+#   - No zone may exceed 5% of total cashouts (cap enforced post-generation)
+#   - Every zone must receive at least 0.2% of cashouts (floor = 120 cases per zone)
+#   - 8 geographic regions with minimum 10 zones each
+#   - Named real Indian districts for all 120 zones (no "District-N" placeholders)
+geographic:
+  num_zones: 120
+  region_balance:
+    north:      18   # Delhi NCR, UP, Haryana, Punjab, HP, J&K
+    south:      20   # Karnataka, Tamil Nadu, Telangana, AP, Kerala
+    west:       18   # Maharashtra, Gujarat, Rajasthan (west)
+    east:       16   # West Bengal, Bihar, Odisha, Jharkhand
+    central:    14   # MP, Chhattisgarh, Rajasthan (east)
+    northeast:  10   # Assam, Meghalaya, Manipur, Tripura, Mizoram
+    northwest:  12   # Punjab, Haryana (non-NCR), Himachal Pradesh
+    coastal:    12   # Kerala coast, Goa, Konkan, Andhra coast
+  max_zone_cashout_share: 0.050   # no zone > 5%
+  min_zone_cashout_share: 0.002   # every zone >= 0.2% (120 cases min)
+  # Hotspot zones (known cybercrime hubs) may receive up to 2× floor weight
+  hotspot_zones:
+    - Jamtara        # Jharkhand
+    - Mewat          # Haryana
+    - Bharatpur      # Rajasthan
+    - Mathura        # UP
+    - Deoghar        # Jharkhand
+    - Alwar          # Rajasthan
+    - Dhenkanal      # Odisha
+    - Katihar        # Bihar
+
+# ─── Typologies ───────────────────────────────────────────────────────────────
+# V2 adds 4 new typologies not present in V1.
+# avg_amount drives the lognormal center; sigma controls spread.
+# complaint_lag_hours_median controls how quickly victims report.
+typologies:
+  TYP_01:
+    name: "OTP / KYC Fraud"
+    avg_amount: 25000
+    lognormal_sigma: 0.75
+    complaint_lag_hours_median: 1.5    # fast filer — OTP victims notice quickly
+    share: 0.14
+  TYP_02:
+    name: "Fake Loan App"
+    avg_amount: 15000
+    lognormal_sigma: 0.70
+    complaint_lag_hours_median: 4.0
+    share: 0.11
+  TYP_03:
+    name: "Part-Time Job Scam"
+    avg_amount: 120000
+    lognormal_sigma: 0.85
+    complaint_lag_hours_median: 6.0
+    share: 0.11
+  TYP_04:
+    name: "Investment / Crypto Scam"
+    avg_amount: 500000
+    lognormal_sigma: 0.90
+    complaint_lag_hours_median: 12.0   # slow filer — victims hold hope
+    share: 0.12
+  TYP_05:
+    name: "Sextortion"
+    avg_amount: 40000
+    lognormal_sigma: 0.80
+    complaint_lag_hours_median: 24.0   # shame delay — very slow filer
+    share: 0.08
+  TYP_06:
+    name: "Marketplace / OLX Fraud"
+    avg_amount: 10000
+    lognormal_sigma: 0.70
+    complaint_lag_hours_median: 2.0
+    share: 0.12
+  TYP_07:
+    name: "Digital Arrest"
+    avg_amount: 300000
+    lognormal_sigma: 0.85
+    complaint_lag_hours_median: 8.0
+    share: 0.12
+  TYP_08:
+    name: "SIM Swap / Account Takeover"
+    avg_amount: 85000
+    lognormal_sigma: 0.80
+    complaint_lag_hours_median: 2.5
+    share: 0.08
+  TYP_09:
+    name: "Romance / Honey Trap Scam"
+    avg_amount: 180000
+    lognormal_sigma: 0.95
+    complaint_lag_hours_median: 48.0   # victims take days to accept fraud
+    share: 0.07
+  TYP_10:
+    name: "Courier / Parcel Scam"
+    avg_amount: 35000
+    lognormal_sigma: 0.75
+    complaint_lag_hours_median: 3.0
+    share: 0.05
+
+# ─── Transaction hop distribution ─────────────────────────────────────────────
+# V2 explicitly supports 0-hop upstream-trigger cases.
+# Hop count drawn from mixture distribution rather than single Poisson.
+hops:
+  hop_distribution:
+    # probability of each hop count (must sum to 1.0)
+    0: 0.04    # upstream-trigger / complaint-only — new in V2
+    1: 0.18
+    2: 0.22
+    3: 0.22
+    4: 0.16
+    5: 0.10
+    6: 0.05
+    7: 0.02
+    8: 0.01
+  # Inter-hop delay: lognormal parameters
+  inter_hop_delay_mean_log: 1.8    # ~6 min median
+  inter_hop_delay_sigma_log: 1.1
+  # Bank feed availability lag (event → available_time): uniform range
+  bank_feed_lag_min_minutes: 10
+  bank_feed_lag_max_minutes: 90
+  # Amount retention per hop (not final): uniform range
+  amount_retention_min: 0.55
+  amount_retention_max: 1.00
+  # Channel distribution (realistic UPI dominance)
+  channels:
+    UPI:  0.62
+    IMPS: 0.24
+    NEFT: 0.10
+    RTGS: 0.04  # large transfers only (amount > 2L)
+
+# ─── Timing (cashout window) ──────────────────────────────────────────────────
+# V2 explicitly populates the full remaining-time distribution including
+# very-short and long-window cases for Time-to-Event Engine coverage.
+timing:
+  # Cashout delay from LAST hop: lognormal parameters
+  cashout_delay_mean_log: 3.2     # ~25 min median from last hop
+  cashout_delay_sigma_log: 1.0
+  cashout_delay_min_minutes: 3
+  cashout_delay_max_minutes: 600
+  # Override buckets to ensure Time-to-Event coverage
+  # These are applied AFTER the lognormal draw via rejection sampling
+  # ensuring minimum representation in each bucket:
+  timing_floor_fractions:
+    under_5min:   0.03    # 3% have < 5 min remaining at T0
+    5_to_15min:   0.07    # 7% have 5–15 min
+    15_to_30min:  0.12    # 12%
+    30_to_60min:  0.28    # 28%
+    60_to_120min: 0.25    # 25%
+    over_120min:  0.25    # 25%
+
+# ─── Complaint timing ─────────────────────────────────────────────────────────
+# V2 deliberately includes a "fast filer" cohort so that ~25% of complaints
+# are available BEFORE the cashout (enabling genuine real-time intervention).
+complaint:
+  # Three cohorts:
+  # fast_filer:   complaint_lag ~ lognormal(0.5, 0.6) hours  [sub-1h]
+  # normal_filer: complaint_lag ~ typology-specific median
+  # slow_filer:   complaint_lag ~ lognormal(3.5, 0.8) hours  [>24h]
+  fast_filer_fraction:   0.25    # 25% fast filers (complaint before cashout target)
+  normal_filer_fraction: 0.55
+  slow_filer_fraction:   0.20
+  fast_filer_lag_mean_log:   0.5    # median ~1.6h
+  fast_filer_lag_sigma_log:  0.6
+  slow_filer_lag_mean_log:   3.5    # median ~33h
+  slow_filer_lag_sigma_log:  0.8
+  # Available time lag after complaint (NCRP ingestion delay)
+  available_lag_min_minutes: 5
+  available_lag_max_minutes: 45
+
+# ─── Outcomes / freezing ─────────────────────────────────────────────────────
+# V2 targets ~15% freeze/hold rate (up from 1.3% in V1).
+# Freeze is triggered when complaint IS available before cashout AND
+# a random draw passes the freeze_probability.
+outcomes:
+  freeze_probability_when_complaint_before_cashout: 0.55  # 55% of eligible → FROZEN
+  # Additional hold types beyond FROZEN:
+  # REVERSED: post-cashout reversal within 24h (rare)
+  # PARTIAL_FREEZE: partial amount frozen
+  # COMPLETED: normal cashout
+  reversed_probability: 0.02     # 2% of COMPLETED get REVERSED (within 24h)
+  partial_freeze_probability: 0.04  # 4% partial freeze
+  # Censored (unresolved) cases
+  censored_fraction: 0.03         # 3% right-censored (no outcome within 24h)
+  # available_timestamp on outcome = event_timestamp + uniform(5, 30) min
+  outcome_available_lag_min_minutes: 5
+  outcome_available_lag_max_minutes: 30
+
+# ─── Entity / registry ────────────────────────────────────────────────────────
+entities:
+  # Recurrence model: Zipf-like with explicit tiers
+  # Tier A: High-recurrence hub accounts (50–500 appearances)
+  # Tier B: Medium-recurrence (5–50 appearances)
+  # Tier C: Low-recurrence (2–5 appearances)
+  # Tier D: Single-use / ephemeral (1 appearance)
+  # Tier E: Test-only unseen entities (never appear in train)
+  tier_a_fraction: 0.03    # 3% of mule accounts → hub tier
+  tier_b_fraction: 0.12
+  tier_c_fraction: 0.25
+  tier_d_fraction: 0.50
+  tier_e_fraction: 0.10    # reserved for test-only unseen entities
+  # Geographic entropy by tier
+  # high_entropy = account used across many zones (challenging for M8)
+  tier_a_high_entropy_fraction: 0.25   # 25% of hub accounts are geographically scattered
+  tier_b_high_entropy_fraction: 0.15
+  # Total mule entity count
+  num_mule_entities: 18000
+  accounts_per_entity_zipf_exponent: 1.8   # 1–6 accounts per entity
+  accounts_per_entity_max: 6
+
+# ─── Missingness ──────────────────────────────────────────────────────────────
+# Controlled structural missingness — none of these corrupt required timestamps.
+missingness:
+  missing_channel_fraction:     0.03   # 3% of hops have null channel
+  missing_institution_fraction: 0.08   # 8% of hops have null institution
+  missing_complaint_fraction:   0.04   # 4% of cases: no complaint context at prediction time
+  unknown_entity_fraction:      0.06   # 6% of hop destinations are unseen (Tier E)
+  missing_victim_district:      0.02   # 2% of complaints have null victim_district
+
+# ─── Temporal patterns ────────────────────────────────────────────────────────
+temporal:
+  # Hour-of-day distribution: bimodal (morning rush + evening peak)
+  # Sampled from mixture of two Gaussians
+  hour_peak1_mean: 11.0
+  hour_peak1_std:  2.5
+  hour_peak1_weight: 0.45
+  hour_peak2_mean: 19.5
+  hour_peak2_std:  2.0
+  hour_peak2_weight: 0.35
+  hour_uniform_weight: 0.20    # 20% uniform (night-time / off-hours)
+  # Day-of-week: weekdays slightly higher than weekends
+  weekday_weight: 0.60         # Mon–Fri
+  weekend_weight: 0.40         # Sat–Sun
+  # Monthly trend: slight ramp-up over 6 months (fraud increasing)
+  monthly_growth_rate: 0.02    # 2% more cases each month vs previous
+
+# ─── Amount distribution ──────────────────────────────────────────────────────
+amounts:
+  global_min_inr: 500
+  global_max_inr: 10000000   # 1 Cr ceiling
+  # High-value outlier injection: 0.5% of cases get amount > 5L
+  high_value_fraction: 0.005
+  high_value_min_inr: 500000
+  high_value_max_inr: 10000000
+
+# ─── Split boundaries (temporal) ─────────────────────────────────────────────
+splits:
+  train_months: [1, 2, 3, 4]    # Jan–Apr 2026
+  val_month:    [5]              # May 2026
+  test_month:   [6]              # Jun 2026
