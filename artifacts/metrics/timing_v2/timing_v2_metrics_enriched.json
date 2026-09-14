@@ -1,0 +1,32 @@
+{
+  "val": {
+    "n_obs_snapshots": 21924,
+    "n_censored_snapshots": 1004,
+    "aft_mae": 38.11,
+    "aft_median_ae": 24.97,
+    "q50_mae": 37.77,
+    "p25_p75_coverage_pct": 49.5,
+    "interval_mean_min": 52.6,
+    "crossing_pct_after_correction": 0.0,
+    "brier_30": 0.2021,
+    "brier_60": 0.2251,
+    "brier_120": 0.1031,
+    "survival_monotone": true
+  },
+  "test": {
+    "n_obs_snapshots": 21697,
+    "n_censored_snapshots": 880,
+    "aft_mae": 37.55,
+    "aft_median_ae": 24.89,
+    "q50_mae": 37.3,
+    "p25_p75_coverage_pct": 49.4,
+    "interval_mean_min": 52.6,
+    "interval_median_min": 53.4,
+    "crossing_pct_after_correction": 0.0,
+    "brier_30": 0.2004,
+    "brier_60": 0.2262,
+    "brier_120": 0.1042
+  },
+  "calibrator_persistence": true,
+  "censored_handling_correct": true
+}

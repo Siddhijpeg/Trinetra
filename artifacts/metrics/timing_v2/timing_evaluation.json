@@ -1,0 +1,36 @@
+{
+  "val_aft": {
+    "mae": NaN,
+    "median_ae": NaN,
+    "p75_ae": NaN
+  },
+  "val_quantile_median": {
+    "mae": NaN,
+    "median_ae": NaN,
+    "p75_ae": NaN
+  },
+  "val_quantile_coverage": 0.4729152128401954,
+  "val_brier": {
+    "t30": 0.2120879750555645,
+    "t60": 0.22180420701296297,
+    "t120": 0.09978885114544102
+  },
+  "val_survival_monotonic": true,
+  "val_quantile_crossing": 0.0,
+  "test_aft": {
+    "mae": NaN,
+    "median_ae": NaN,
+    "p75_ae": NaN
+  },
+  "test_quantile_median": {
+    "mae": NaN,
+    "median_ae": NaN,
+    "p75_ae": NaN
+  },
+  "test_quantile_coverage": 0.4742879922044559,
+  "test_brier": {
+    "t30": 0.2096080421049313,
+    "t60": 0.22326957600580166,
+    "t120": 0.10124298368020089
+  }
+}

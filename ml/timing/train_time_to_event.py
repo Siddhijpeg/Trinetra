@@ -36,9 +36,9 @@ BIN_WIDTH_MINUTES = 30.0
 MAX_MINUTES       = 480.0   # 8 hours — operationally relevant intervention window
 MAX_SNAPSHOTS     = 3       # T0, after Hop1, after Hop2
 
-ARTIFACTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../artifacts/models/timing'))
-METRICS_DIR   = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../artifacts/metrics/timing'))
-SPLITS_DIR    = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data/synthetic/splits'))
+ARTIFACTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../artifacts/models/timing_v2'))
+METRICS_DIR   = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../artifacts/metrics/timing_v2'))
+SPLITS_DIR    = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data/synthetic_v2/splits'))
 
 # ─── Feature columns (matches TimeToEventFeatureBuilder.get_feature_names()) ──
 # Features that can be computed from the CSVs in the same logical way as from
@@ -64,10 +64,16 @@ def load_split(prefix: str):
                          parse_dates=["incident_timestamp", "complaint_timestamp", "available_timestamp"])
     hops  = pd.read_csv(os.path.join(SPLITS_DIR, f"{prefix}_hops.csv"),
                          parse_dates=["event_timestamp", "available_timestamp"])
-    couts = pd.read_csv(os.path.join(SPLITS_DIR, f"{prefix}_cashout_events.csv"),
-                         parse_dates=["event_timestamp"])
-    # cashout CSV has no available_timestamp — outcomes are labels only, never features.
-    return cmps, hops, couts
+    couts_raw = pd.read_csv(os.path.join(SPLITS_DIR, f"{prefix}_cashout_events.csv"),
+                             parse_dates=["event_timestamp"])
+    # V2: timestamps may include microseconds — ensure ISO8601 parsing
+    for df, cols in [(cmps, ["incident_timestamp","complaint_timestamp","available_timestamp"]),
+                     (hops, ["event_timestamp","available_timestamp"]),
+                     (couts_raw, ["event_timestamp"])]:
+        for c in cols:
+            if c in df.columns and df[c].dtype == object:
+                df[c] = pd.to_datetime(df[c], format="ISO8601")
+    return cmps, hops, couts_raw
 
 # ─── Snapshot builder (vectorized) ────────────────────────────────────────────
 
@@ -81,113 +87,218 @@ def build_snapshots(cmps: pd.DataFrame, hops: pd.DataFrame, couts: pd.DataFrame)
       T1  : 1 second after hop 1's available_timestamp
       T2  : 1 second after hop 2's available_timestamp (if exists)
       T3  : 1 second after hop 3's available_timestamp (if exists)
+
+    Censored cases (status == "CENSORED"):
+      - event_observed = False
+      - lower_bound_minutes = observed follow-up duration (event_timestamp - prediction_time)
+      - upper_bound_minutes = +inf
+      - exact_minutes = NaN (no confirmed cashout)
+      - These cases produce person-period rows all labelled 0 for Dynamic Hazard.
+      - AFT receives lower/upper bounds correctly (event_observed=False → upper=inf).
+      - Quantile model excludes them (trains only on event_observed=True).
+
+    Zero-hop cases:
+      - T0 is derived from incident_timestamp - 10min rather than first hop.
+      - hop_count = 0 at T0.
     """
-    # 1. Hop snapshot candidate times: available_timestamp + 1s (where prediction_time < cashout_time)
-    hops_m = hops.merge(couts[["complaint_id", "event_timestamp"]].rename(columns={"event_timestamp": "cashout_time"}), on="complaint_id")
-    hops_m["prediction_time"] = hops_m["available_timestamp"] + timedelta(seconds=1)
-    hops_m = hops_m[hops_m["prediction_time"] < hops_m["cashout_time"]].copy()
-
-    # Limit to earliest MAX_SNAPSHOTS available_timestamp snapshot times per complaint
-    hops_m = hops_m.sort_values(["complaint_id", "available_timestamp"])
-    hops_m["snap_order"] = hops_m.groupby("complaint_id").cumcount() + 1
-    hop_snaps = hops_m[hops_m["snap_order"] <= MAX_SNAPSHOTS][["complaint_id", "prediction_time", "cashout_time"]].copy()
-
-    # 2. T0 snapshot: min(event_timestamp) - 10m
-    t0 = hops.groupby("complaint_id")["event_timestamp"].min().reset_index()
-    t0 = t0.merge(couts[["complaint_id", "event_timestamp"]].rename(columns={"event_timestamp": "cashout_time"}), on="complaint_id")
-    t0["prediction_time"] = t0["event_timestamp"] - timedelta(minutes=10)
-    t0 = t0[t0["prediction_time"] < t0["cashout_time"]][["complaint_id", "prediction_time", "cashout_time"]].copy()
-
-    # Combine unique candidate snapshots
-    snaps = pd.concat([t0, hop_snaps], ignore_index=True).drop_duplicates(subset=["complaint_id", "prediction_time"])
-
-    # 3. As-of-time hop feature join
-    merged = snaps.merge(
-        hops[["complaint_id", "event_timestamp", "available_timestamp", "amount_transferred"]],
-        on="complaint_id",
-        how="left"
-    )
-    avail_hops = merged[merged["available_timestamp"] <= merged["prediction_time"]].copy()
-
-    if not avail_hops.empty:
-        # Sort chronologically by event_timestamp within each snapshot context
-        avail_hops = avail_hops.sort_values(["complaint_id", "prediction_time", "event_timestamp"])
-        grp = avail_hops.groupby(["complaint_id", "prediction_time"])
-
-        avail_hops["hop_count"] = grp.cumcount() + 1
-        avail_hops["cumulative_amount"] = grp["amount_transferred"].cumsum()
-        avail_hops["first_event_timestamp"] = grp["event_timestamp"].transform("first")
-        avail_hops["prev_event_timestamp"] = grp["event_timestamp"].shift(1)
-        avail_hops.loc[avail_hops["hop_count"] == 1, "prev_event_timestamp"] = pd.NaT
-
-        snap_hop_feats = avail_hops.groupby(["complaint_id", "prediction_time"]).last().reset_index()
-        res = snaps.merge(
-            snap_hop_feats[[
-                "complaint_id", "prediction_time", "hop_count", "cumulative_amount",
-                "amount_transferred", "event_timestamp", "first_event_timestamp", "prev_event_timestamp"
-            ]],
-            on=["complaint_id", "prediction_time"],
-            how="left"
-        )
+    # ── Separate observed and censored cashouts ──────────────────────────────
+    # V2 cashout_events.csv has a 'status' column
+    has_status = "status" in couts.columns
+    if has_status:
+        couts_obs  = couts[couts["status"] != "CENSORED"].copy()
+        couts_cens = couts[couts["status"] == "CENSORED"].copy()
     else:
-        res = snaps.copy()
-        for c in ["hop_count", "cumulative_amount", "amount_transferred", "event_timestamp", "first_event_timestamp", "prev_event_timestamp"]:
-            res[c] = np.nan
+        couts_obs  = couts.copy()
+        couts_cens = pd.DataFrame(columns=couts.columns)
 
-    # Fill default hop values for T0 snapshots
-    res["hop_count"] = res["hop_count"].fillna(0.0)
-    res["cumulative_amount"] = res["cumulative_amount"].fillna(0.0)
-    res["current_txn_amount"] = res["amount_transferred"].fillna(0.0)
+    # ── OBSERVED snapshots ────────────────────────────────────────────────────
+    def _make_snaps(couts_sub):
+        if len(couts_sub) == 0:
+            return pd.DataFrame()
 
-    res["elapsed_since_first_txn"] = np.where(
-        res["first_event_timestamp"].notna(),
-        (res["prediction_time"] - res["first_event_timestamp"]).dt.total_seconds() / 60.0,
-        0.0
-    )
-    res["elapsed_since_prev_txn"] = np.where(
-        res["prev_event_timestamp"].notna(),
-        (res["event_timestamp"] - res["prev_event_timestamp"]).dt.total_seconds() / 60.0,
-        0.0
-    )
+        # 1. Hop snapshot candidate times: available_timestamp + 1s (where pred < cashout)
+        hops_m = hops.merge(couts_sub[["complaint_id", "event_timestamp"]].rename(
+            columns={"event_timestamp": "cashout_time"}), on="complaint_id")
+        if len(hops_m) == 0:
+            hop_snaps = pd.DataFrame(columns=["complaint_id","prediction_time","cashout_time"])
+        else:
+            hops_m["prediction_time"] = hops_m["available_timestamp"] + timedelta(seconds=1)
+            hops_m["cashout_time"] = pd.to_datetime(hops_m["cashout_time"])
+            hops_m = hops_m[hops_m["prediction_time"] < hops_m["cashout_time"]].copy()
+            hops_m = hops_m.sort_values(["complaint_id", "available_timestamp"])
+            hops_m["snap_order"] = hops_m.groupby("complaint_id").cumcount() + 1
+            hop_snaps = hops_m[hops_m["snap_order"] <= MAX_SNAPSHOTS][
+                ["complaint_id", "prediction_time", "cashout_time"]].copy()
 
-    res["prediction_hour"]      = res["prediction_time"].dt.hour.astype(float)
-    res["prediction_dayofweek"] = res["prediction_time"].dt.dayofweek.astype(float)
+        # 2. T0 snapshot: min(event_timestamp) - 10m for cases WITH hops
+        t0_with_hops = hops.groupby("complaint_id")["event_timestamp"].min().reset_index()
+        t0_with_hops = t0_with_hops.merge(couts_sub[["complaint_id", "event_timestamp"]].rename(
+            columns={"event_timestamp": "cashout_time"}), on="complaint_id")
+        if len(t0_with_hops) > 0:
+            t0_with_hops["cashout_time"] = pd.to_datetime(t0_with_hops["cashout_time"])
+            t0_with_hops["prediction_time"] = t0_with_hops["event_timestamp"] - timedelta(minutes=10)
+            t0_with_hops = t0_with_hops[t0_with_hops["prediction_time"] < t0_with_hops["cashout_time"]][
+                ["complaint_id", "prediction_time", "cashout_time"]].copy()
+        else:
+            t0_with_hops = pd.DataFrame(columns=["complaint_id","prediction_time","cashout_time"])
 
-    # 4. As-of-time complaint feature join
-    cmps_slim = cmps[["complaint_id", "incident_timestamp", "available_timestamp", "amount_inr"]].rename(
-        columns={"available_timestamp": "cmp_available_timestamp"}
-    ).copy()
-    res = res.merge(cmps_slim, on="complaint_id", how="left")
+        # 3. T0 snapshot: incident_timestamp - 10m for zero-hop cases
+        no_hop_ids = set(couts_sub["complaint_id"]) - set(hops["complaint_id"])
+        if no_hop_ids:
+            zh = cmps[cmps["complaint_id"].isin(no_hop_ids)][
+                ["complaint_id", "incident_timestamp"]].copy()
+            zh = zh.merge(couts_sub[["complaint_id", "event_timestamp"]].rename(
+                columns={"event_timestamp": "cashout_time"}), on="complaint_id", how="inner")
+            zh["cashout_time"] = pd.to_datetime(zh["cashout_time"])
+            zh["prediction_time"] = pd.to_datetime(zh["incident_timestamp"]) - pd.Timedelta(minutes=10)
+            zh = zh[zh["prediction_time"] < zh["cashout_time"]][
+                ["complaint_id", "prediction_time", "cashout_time"]].copy()
+            # Ensure consistent dtypes before concat
+            for col in ["prediction_time", "cashout_time"]:
+                t0_with_hops[col] = pd.to_datetime(t0_with_hops[col]) if len(t0_with_hops) > 0 else t0_with_hops[col]
+            t0_all = pd.concat([t0_with_hops, zh], ignore_index=True)
+        else:
+            t0_all = t0_with_hops
 
-    cmp_avail = (res["prediction_time"] >= res["cmp_available_timestamp"]) & res["cmp_available_timestamp"].notna()
-    res["has_complaint"] = cmp_avail.astype(float)
-    res["elapsed_since_incident"] = np.where(
-        cmp_avail,
-        (res["prediction_time"] - res["incident_timestamp"]).dt.total_seconds() / 60.0,
-        0.0
-    )
-    res["amount_retained_ratio"] = np.where(
-        cmp_avail & (res["amount_inr"] > 0),
-        res["current_txn_amount"] / (res["amount_inr"] + 1e-5),
-        0.0
-    )
+        snaps = pd.concat([t0_all, hop_snaps], ignore_index=True).drop_duplicates(
+            subset=["complaint_id", "prediction_time"])
+        return snaps
 
-    # 5. Targets
-    res["remaining_minutes"] = (res["cashout_time"] - res["prediction_time"]).dt.total_seconds() / 60.0
-    res["event_observed"]      = True
-    res["lower_bound_minutes"] = res["remaining_minutes"].clip(lower=0.0)
-    res["upper_bound_minutes"] = res["lower_bound_minutes"]
-    res["exact_minutes"]       = res["lower_bound_minutes"]
+    snaps_obs  = _make_snaps(couts_obs)
+    snaps_cens = _make_snaps(couts_cens)
 
+    # ── Feature join (same for both) ──────────────────────────────────────────
+    def _add_hop_features(snaps):
+        if len(snaps) == 0:
+            return snaps
+
+        # Ensure datetimes are typed correctly before joins
+        snaps = snaps.copy()
+        for col in ["prediction_time", "cashout_time"]:
+            if col in snaps.columns:
+                snaps[col] = pd.to_datetime(snaps[col])
+
+        merged = snaps.merge(
+            hops[["complaint_id", "event_timestamp", "available_timestamp", "amount_transferred"]],
+            on="complaint_id", how="left"
+        )
+        # Cast joined datetime columns (may be object/float if hops had no rows)
+        for col in ["event_timestamp", "available_timestamp"]:
+            if col in merged.columns:
+                merged[col] = pd.to_datetime(merged[col], errors="coerce")
+
+        avail_hops = merged[merged["available_timestamp"] <= merged["prediction_time"]].copy()
+
+        if not avail_hops.empty:
+            avail_hops = avail_hops.sort_values(["complaint_id", "prediction_time", "event_timestamp"])
+            grp = avail_hops.groupby(["complaint_id", "prediction_time"])
+            avail_hops["hop_count"] = grp.cumcount() + 1
+            avail_hops["cumulative_amount"] = grp["amount_transferred"].cumsum()
+            avail_hops["first_event_timestamp"] = grp["event_timestamp"].transform("first")
+            avail_hops["prev_event_timestamp"] = grp["event_timestamp"].shift(1)
+            avail_hops.loc[avail_hops["hop_count"] == 1, "prev_event_timestamp"] = pd.NaT
+
+            snap_hop_feats = avail_hops.groupby(["complaint_id", "prediction_time"]).last().reset_index()
+            res = snaps.merge(
+                snap_hop_feats[[
+                    "complaint_id", "prediction_time", "hop_count", "cumulative_amount",
+                    "amount_transferred", "event_timestamp", "first_event_timestamp", "prev_event_timestamp"
+                ]],
+                on=["complaint_id", "prediction_time"], how="left"
+            )
+        else:
+            res = snaps.copy()
+            for c in ["hop_count", "cumulative_amount", "amount_transferred",
+                      "event_timestamp", "first_event_timestamp", "prev_event_timestamp"]:
+                res[c] = np.nan
+
+        res["hop_count"] = res["hop_count"].fillna(0.0)
+        res["cumulative_amount"] = res["cumulative_amount"].fillna(0.0)
+        res["current_txn_amount"] = res["amount_transferred"].fillna(0.0)
+
+        # Cast timestamp cols that may be float (from empty-hops merge)
+        for ts_col in ["first_event_timestamp", "prev_event_timestamp", "event_timestamp"]:
+            if ts_col in res.columns:
+                res[ts_col] = pd.to_datetime(res[ts_col], errors="coerce")
+
+        res["elapsed_since_first_txn"] = np.where(
+            res["first_event_timestamp"].notna(),
+            (res["prediction_time"] - res["first_event_timestamp"]).dt.total_seconds() / 60.0, 0.0
+        )
+        res["elapsed_since_prev_txn"] = np.where(
+            res["prev_event_timestamp"].notna(),
+            (res["event_timestamp"] - res["prev_event_timestamp"]).dt.total_seconds() / 60.0, 0.0
+        )
+        res["prediction_hour"]      = res["prediction_time"].dt.hour.astype(float)
+        res["prediction_dayofweek"] = res["prediction_time"].dt.dayofweek.astype(float)
+
+        # Complaint features (as-of-time)
+        cmps_slim = cmps[["complaint_id", "incident_timestamp", "available_timestamp", "amount_inr"]].rename(
+            columns={"available_timestamp": "cmp_available_timestamp"}).copy()
+        res = res.merge(cmps_slim, on="complaint_id", how="left")
+        cmp_avail = (res["prediction_time"] >= res["cmp_available_timestamp"]) & res["cmp_available_timestamp"].notna()
+        res["has_complaint"] = cmp_avail.astype(float)
+        res["elapsed_since_incident"] = np.where(
+            cmp_avail,
+            (res["prediction_time"] - res["incident_timestamp"]).dt.total_seconds() / 60.0, 0.0
+        )
+        res["amount_retained_ratio"] = np.where(
+            cmp_avail & (res["amount_inr"] > 0),
+            res["current_txn_amount"] / (res["amount_inr"] + 1e-5), 0.0
+        )
+        res[FEATURE_COLS] = res[FEATURE_COLS].fillna(0.0)
+        return res
+
+    snaps_obs  = _add_hop_features(snaps_obs)
+    snaps_cens = _add_hop_features(snaps_cens)
+
+    # ── Targets ───────────────────────────────────────────────────────────────
+    # Observed: event occurred — exact time known
+    if len(snaps_obs) > 0:
+        snaps_obs["remaining_minutes"] = (
+            snaps_obs["cashout_time"] - snaps_obs["prediction_time"]
+        ).dt.total_seconds() / 60.0
+        snaps_obs["event_observed"]      = True
+        snaps_obs["lower_bound_minutes"] = snaps_obs["remaining_minutes"].clip(lower=0.0)
+        snaps_obs["upper_bound_minutes"] = snaps_obs["lower_bound_minutes"]
+        snaps_obs["exact_minutes"]       = snaps_obs["lower_bound_minutes"]
+
+    # Censored: observation boundary — cashout did not happen by event_timestamp
+    #   lower_bound = observation duration (how long we watched without event)
+    #   upper_bound = +infinity (we don't know when/if it will happen)
+    #   event_observed = False
+    if len(snaps_cens) > 0:
+        snaps_cens["remaining_minutes"] = (
+            snaps_cens["cashout_time"] - snaps_cens["prediction_time"]
+        ).dt.total_seconds() / 60.0
+        snaps_cens["event_observed"]      = False
+        snaps_cens["lower_bound_minutes"] = snaps_cens["remaining_minutes"].clip(lower=0.0)
+        snaps_cens["upper_bound_minutes"] = float('inf')
+        snaps_cens["exact_minutes"]       = np.nan   # no confirmed event time
+
+    # ── Combine and clean ─────────────────────────────────────────────────────
     all_cols = ["complaint_id", "prediction_time"] + FEATURE_COLS + [
         "remaining_minutes", "event_observed", "lower_bound_minutes", "upper_bound_minutes", "exact_minutes"
     ]
 
-    combined = res[all_cols].copy()
-    combined = combined.dropna(subset=["remaining_minutes"])
-    combined = combined[combined["remaining_minutes"] >= 0]
-    combined[FEATURE_COLS] = combined[FEATURE_COLS].fillna(0.0)
+    parts = []
+    if len(snaps_obs) > 0:
+        snaps_obs_clean = snaps_obs[all_cols].copy()
+        snaps_obs_clean = snaps_obs_clean.dropna(subset=["remaining_minutes"])
+        snaps_obs_clean = snaps_obs_clean[snaps_obs_clean["remaining_minutes"] >= 0]
+        parts.append(snaps_obs_clean)
 
+    if len(snaps_cens) > 0:
+        snaps_cens_clean = snaps_cens[all_cols].copy()
+        snaps_cens_clean = snaps_cens_clean[snaps_cens_clean["remaining_minutes"] >= 0]
+        # exact_minutes is NaN for censored — that is correct
+        parts.append(snaps_cens_clean)
+
+    if not parts:
+        return pd.DataFrame(columns=all_cols)
+
+    combined = pd.concat(parts, ignore_index=True)
+    combined[FEATURE_COLS] = combined[FEATURE_COLS].fillna(0.0)
     return combined
 
 # ─── Build targets list for model APIs ────────────────────────────────────────

@@ -115,9 +115,9 @@ check(len(orphan_cout) == 0,
       "All cashout complaint_ids exist in complaints",
       f"{len(orphan_cout)} cashout complaint_ids not in complaints")
 
-bad_zones    = set(cout["zone_id"]) - zone_ids
+bad_zones    = set(cout[cout["zone_id"].notna()]["zone_id"]) - zone_ids
 check(len(bad_zones) == 0,
-      "All cashout zone_ids in zone_catalog",
+      "All non-null cashout zone_ids in zone_catalog",
       f"{len(bad_zones)} cashout zone_ids not in catalog: {list(bad_zones)[:5]}")
 
 # Hop destination accounts: may include unseen (Tier-E) or victim accounts
@@ -248,28 +248,34 @@ check(zones["lat"].notna().all() and zones["lng"].notna().all(),
       "No null lat/lng in zone_catalog",
       "Null lat/lng found in zone_catalog")
 
-# Cashout events
-check(cout["lat"].between(6.0, 37.5).all(),
-      "All cashout lat in [6.0, 37.5]",
-      f"{(~cout['lat'].between(6.0, 37.5)).sum()} cashouts outside lat range")
-check(cout["lng"].between(68.0, 97.5).all(),
-      "All cashout lng in [68.0, 97.5]",
-      f"{(~cout['lng'].between(68.0, 97.5)).sum()} cashouts outside lng range")
-check(cout["lat"].notna().all() and cout["lng"].notna().all(),
-      "All cashout rows have lat/lng populated",
-      "Null lat/lng in cashout_events")
+# Cashout coordinates — CENSORED rows intentionally have null lat/lng (patched)
+cout_observed = cout[cout["status"] != "CENSORED"]
+check(cout_observed["lat"].between(6.0, 37.5).all(),
+      "All observed-outcome lat in [6.0, 37.5]",
+      f"{(~cout_observed['lat'].between(6.0, 37.5)).sum()} observed cashouts outside lat range")
+check(cout_observed["lng"].between(68.0, 97.5).all(),
+      "All observed-outcome lng in [68.0, 97.5]",
+      f"{(~cout_observed['lng'].between(68.0, 97.5)).sum()} observed cashouts outside lng range")
+check(cout_observed["lat"].notna().all() and cout_observed["lng"].notna().all(),
+      f"All observed-outcome rows have lat/lng ({len(cout_observed):,} rows)",
+      "Null lat/lng in observed cashout_events")
+cens_lat_null = cout[cout["status"] == "CENSORED"]["lat"].isna().all()
+cens_lng_null = cout[cout["status"] == "CENSORED"]["lng"].isna().all()
+check(cens_lat_null and cens_lng_null,
+      "All CENSORED rows have null lat/lng (generator truth hidden) ✅",
+      "CENSORED rows expose lat/lng — leakage risk")
 
-# Coordinate–zone consistency: cashout jitter should be within ~10km of zone centroid
+# Coordinate–zone consistency: jitter within ~15km of zone centroid (observed only)
 zone_lkp = zones.set_index("zone_id")[["lat","lng"]].to_dict("index")
-cout_z = cout[["zone_id","lat","lng"]].merge(
+cout_z = cout_observed[["zone_id","lat","lng"]].merge(
     zones[["zone_id","lat","lng"]].rename(columns={"lat":"z_lat","lng":"z_lng"}),
     on="zone_id", how="left")
 cout_z["dlat"] = (cout_z["lat"] - cout_z["z_lat"]).abs()
 cout_z["dlng"] = (cout_z["lng"] - cout_z["z_lng"]).abs()
 bad_geo = ((cout_z["dlat"] > 0.15) | (cout_z["dlng"] > 0.15)).sum()
 check(bad_geo == 0,
-      "All cashout coordinates within 0.15° (~15km) of zone centroid",
-      f"{bad_geo} cashout coordinates too far from zone centroid")
+      "All observed cashout coordinates within 0.15° (~15km) of zone centroid",
+      f"{bad_geo} observed cashout coordinates too far from zone centroid")
 
 
 # ── 8. Split integrity ────────────────────────────────────────────────────────
@@ -335,7 +341,7 @@ ok("generator_metadata.csv contains all latent fields (labelled, separate file)"
 
 # ── 10. Geographic coverage ───────────────────────────────────────────────────
 section("10. Geographic Coverage")
-active_zones = set(cout["zone_id"])
+active_zones = set(cout["zone_id"].dropna())
 check(len(active_zones) == len(zones),
       f"All {len(zones)} zones received at least 1 cashout",
       f"{len(zones) - len(active_zones)} zones received 0 cashouts")
@@ -423,6 +429,57 @@ for tag, min_n in [("ZERO_HOP", 100), ("LONG_CHAIN", 500), ("CROSS_STATE", 10000
     check(n >= min_n,
           f"Edge case {tag}: {n:,} cases (≥{min_n} required)",
           f"Edge case {tag} under-represented: only {n} cases (<{min_n})")
+
+
+# ── 15. Censored row field isolation ─────────────────────────────────────────
+section("15. Censored Row Field Isolation")
+cens = cout[cout["status"] == "CENSORED"]
+check(len(cens) > 0,
+      f"CENSORED cases present: {len(cens):,}",
+      "No CENSORED cases — right-censored survival modeling not testable")
+if len(cens) > 0:
+    for field in ["zone_id", "zone_name", "district", "state", "location_id", "lat", "lng"]:
+        if field in cens.columns:
+            null_pct = cens[field].isna().mean()
+            check(null_pct == 1.0,
+                  f"CENSORED.{field} is 100% null (generator truth hidden)",
+                  f"CENSORED.{field} is NOT fully null ({100*null_pct:.1f}%) — leakage risk")
+    check(cens["event_timestamp"].notna().all(),
+          "CENSORED.event_timestamp preserved (observation boundary for survival lower bound)",
+          "CENSORED.event_timestamp has nulls — needed for survival target")
+    check(cens["available_timestamp"].notna().all(),
+          "CENSORED.available_timestamp preserved",
+          "CENSORED.available_timestamp has nulls")
+    nan_amt = cens["amount_cashed_out"].isna().sum()
+    check(nan_amt == len(cens),
+          f"All CENSORED cases have null amount_cashed_out ({nan_amt:,})",
+          f"Some CENSORED cases have non-null amount_cashed_out")
+
+
+# ── 16. Tier-E entity isolation (unseen entities not in train) ────────────────
+section("16. Tier-E Entity Isolation")
+ents_df = ents  # already loaded above
+accs_df = accs
+hops_df = hops
+
+tier_e_ids = set(ents_df[ents_df["tier"] == "E"]["entity_id"])
+check(len(tier_e_ids) > 0,
+      f"Tier-E (test-only unseen) entities present: {len(tier_e_ids):,}",
+      "No Tier-E entities — unseen-entity test coverage missing")
+
+if len(tier_e_ids) > 0:
+    mule_to_ent = (accs_df[accs_df["is_mule"] & accs_df["entity_id"].notna()]
+                   .set_index("account_id")["entity_id"].to_dict())
+    hops_tmp = hops_df.copy()
+    hops_tmp["entity_id"] = hops_tmp["to_account"].map(mule_to_ent)
+
+    tr_ids_v = set(tr_comp["complaint_id"])
+    tier_e_in_train = set(
+        hops_tmp[hops_tmp["complaint_id"].isin(tr_ids_v) &
+                 hops_tmp["entity_id"].isin(tier_e_ids)]["entity_id"].dropna())
+    check(len(tier_e_in_train) == 0,
+          f"No Tier-E entities appear in TRAIN hops — isolation confirmed",
+          f"{len(tier_e_in_train)} Tier-E entities in TRAIN hops — unseen contract violated")
 
 
 # ── FINAL RESULT ──────────────────────────────────────────────────────────────

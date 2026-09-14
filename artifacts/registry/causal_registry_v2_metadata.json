@@ -1,0 +1,12 @@
+{
+  "total_snapshot_pairs": 90405,
+  "complaints_covered": 37722,
+  "accounts_covered": 19474,
+  "in_registry_pct": 67.19,
+  "zero_history_pct": 32.81,
+  "mean_causal_sightings": 4.79,
+  "source": "TRAIN split (Months 1-4) only",
+  "causal_rule": "avail_dt < complaint.incident_timestamp",
+  "output_file": "/Users/vishnukant/Desktop/untitled folder 3/prahari/artifacts/registry/causal_registry_v2.parquet",
+  "leakage_violations": 0
+}

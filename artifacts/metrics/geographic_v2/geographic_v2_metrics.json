@@ -1,0 +1,97 @@
+{
+  "val_m3": {
+    "n": 10112,
+    "top1_pct": 1.55,
+    "top3_pct": 3.47,
+    "top5_pct": 5.7,
+    "mrr": 0.0516,
+    "nll": 4.8321,
+    "brier": 0.0083,
+    "geo_mean_km": 961.3,
+    "geo_median_km": 940.4
+  },
+  "val_m8": {
+    "n": 10112,
+    "top1_pct": 9.7,
+    "top3_pct": 21.49,
+    "top5_pct": 30.9,
+    "mrr": 0.2016,
+    "nll": 4.4092,
+    "brier": 0.0082,
+    "geo_mean_km": 989.5,
+    "geo_median_km": 987.1
+  },
+  "test_m3": {
+    "n": 10096,
+    "top1_pct": 1.37,
+    "top3_pct": 3.81,
+    "top5_pct": 6.1,
+    "mrr": 0.0521,
+    "nll": 4.8293,
+    "brier": 0.0083,
+    "geo_mean_km": 963.7,
+    "geo_median_km": 944.5
+  },
+  "test_m8": {
+    "n": 10096,
+    "top1_pct": 10.09,
+    "top3_pct": 22.48,
+    "top5_pct": 31.79,
+    "mrr": 0.2068,
+    "nll": 4.4114,
+    "brier": 0.0082,
+    "geo_mean_km": 993.8,
+    "geo_median_km": 996.8
+  },
+  "test_m8_with_registry": {
+    "n": 9380,
+    "top1_pct": 10.7,
+    "top3_pct": 23.55,
+    "top5_pct": 33.21,
+    "mrr": 0.2156,
+    "nll": 4.3895,
+    "brier": 0.0082,
+    "geo_mean_km": 997.3,
+    "geo_median_km": 1001.2
+  },
+  "test_m8_no_registry": {
+    "n": 716,
+    "top1_pct": 2.09,
+    "top3_pct": 8.52,
+    "top5_pct": 13.27,
+    "mrr": 0.0917,
+    "nll": 4.6984,
+    "brier": 0.0082,
+    "geo_mean_km": 948.0,
+    "geo_median_km": 926.1
+  },
+  "test_m3_with_registry": {
+    "n": 9380,
+    "top1_pct": 1.31,
+    "top3_pct": 3.45,
+    "top5_pct": 5.55,
+    "mrr": 0.049,
+    "nll": 4.8342,
+    "brier": 0.0083,
+    "geo_mean_km": 964.9,
+    "geo_median_km": 944.5
+  },
+  "test_m3_no_registry": {
+    "n": 716,
+    "top1_pct": 2.09,
+    "top3_pct": 8.52,
+    "top5_pct": 13.27,
+    "mrr": 0.0917,
+    "nll": 4.7654,
+    "brier": 0.0083,
+    "geo_mean_km": 948.0,
+    "geo_median_km": 926.1
+  },
+  "calibration": {
+    "T_m3": 19.999994052499382,
+    "T_m8": 4.5016523851982
+  },
+  "n_train_obs": 38171,
+  "n_val_obs": 10112,
+  "n_test_obs": 10096
+}
