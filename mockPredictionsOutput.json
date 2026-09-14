@@ -1,0 +1,851 @@
+{
+  "summary": {
+    "status": "Evaluated",
+    "top1_accuracy": "88.3%",
+    "top3_recall": "100.0%",
+    "mean_geographic_error": "995.4 km",
+    "total_cases_evaluated": 60
+  },
+  "evaluated_cases": [
+    {
+      "complaint_id": "CMP_2026001",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z14",
+      "predicted_confidence": 0.5506,
+      "top3_zones": [
+        "Z14",
+        "Z01",
+        "Z05"
+      ],
+      "actual_zone": "Z14",
+      "recoverability_score": 0.97,
+      "error_km": 1.88
+    },
+    {
+      "complaint_id": "CMP_2026002",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z09",
+      "predicted_confidence": 0.6088,
+      "top3_zones": [
+        "Z09",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z09",
+      "recoverability_score": 0.87,
+      "error_km": 0.43
+    },
+    {
+      "complaint_id": "CMP_2026003",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z14",
+      "predicted_confidence": 0.8289,
+      "top3_zones": [
+        "Z14",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z14",
+      "recoverability_score": 0.95,
+      "error_km": 1.91
+    },
+    {
+      "complaint_id": "CMP_2026004",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z08",
+      "predicted_confidence": 0.9782,
+      "top3_zones": [
+        "Z08",
+        "Z07",
+        "Z03"
+      ],
+      "actual_zone": "Z08",
+      "recoverability_score": 0.98,
+      "error_km": 0.5
+    },
+    {
+      "complaint_id": "CMP_2026005",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z09",
+      "predicted_confidence": 0.8686,
+      "top3_zones": [
+        "Z09",
+        "Z18",
+        "Z01"
+      ],
+      "actual_zone": "Z09",
+      "recoverability_score": 0.95,
+      "error_km": 0.17
+    },
+    {
+      "complaint_id": "CMP_2026006",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z19",
+      "predicted_confidence": 0.6993,
+      "top3_zones": [
+        "Z19",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z19",
+      "recoverability_score": 0.94,
+      "error_km": 1.24
+    },
+    {
+      "complaint_id": "CMP_2026007",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z17",
+      "predicted_confidence": 0.9907,
+      "top3_zones": [
+        "Z17",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z17",
+      "recoverability_score": 0.99,
+      "error_km": 0.16
+    },
+    {
+      "complaint_id": "CMP_2026008",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z09",
+      "predicted_confidence": 0.8212,
+      "top3_zones": [
+        "Z09",
+        "Z07",
+        "Z04"
+      ],
+      "actual_zone": "Z09",
+      "recoverability_score": 1.0,
+      "error_km": 0.37
+    },
+    {
+      "complaint_id": "CMP_2026009",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z01",
+      "predicted_confidence": 0.5089,
+      "top3_zones": [
+        "Z01",
+        "Z05",
+        "Z11"
+      ],
+      "actual_zone": "Z01",
+      "recoverability_score": 0.97,
+      "error_km": 0.31
+    },
+    {
+      "complaint_id": "CMP_2026010",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z06",
+      "predicted_confidence": 0.5872,
+      "top3_zones": [
+        "Z06",
+        "Z02",
+        "Z01"
+      ],
+      "actual_zone": "Z06",
+      "recoverability_score": 0.92,
+      "error_km": 1.59
+    },
+    {
+      "complaint_id": "CMP_2026011",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z04",
+      "predicted_confidence": 0.906,
+      "top3_zones": [
+        "Z04",
+        "Z07",
+        "Z01"
+      ],
+      "actual_zone": "Z04",
+      "recoverability_score": 0.99,
+      "error_km": 0.55
+    },
+    {
+      "complaint_id": "CMP_2026012",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z15",
+      "predicted_confidence": 0.6665,
+      "top3_zones": [
+        "Z15",
+        "Z17",
+        "Z12"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.98,
+      "error_km": 1.05
+    },
+    {
+      "complaint_id": "CMP_2026013",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z15",
+      "predicted_confidence": 0.8385,
+      "top3_zones": [
+        "Z15",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.99,
+      "error_km": 0.5
+    },
+    {
+      "complaint_id": "CMP_2026014",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z10",
+      "predicted_confidence": 0.6042,
+      "top3_zones": [
+        "Z10",
+        "Z19",
+        "Z15"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.97,
+      "error_km": 11723.12
+    },
+    {
+      "complaint_id": "CMP_2026015",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z04",
+      "predicted_confidence": 0.8826,
+      "top3_zones": [
+        "Z04",
+        "Z02",
+        "Z18"
+      ],
+      "actual_zone": "Z04",
+      "recoverability_score": 0.95,
+      "error_km": 1.68
+    },
+    {
+      "complaint_id": "CMP_2026016",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z03",
+      "predicted_confidence": 0.8533,
+      "top3_zones": [
+        "Z03",
+        "Z13",
+        "Z01"
+      ],
+      "actual_zone": "Z03",
+      "recoverability_score": 0.94,
+      "error_km": 1.22
+    },
+    {
+      "complaint_id": "CMP_2026017",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z10",
+      "predicted_confidence": 0.6042,
+      "top3_zones": [
+        "Z10",
+        "Z19",
+        "Z15"
+      ],
+      "actual_zone": "Z10",
+      "recoverability_score": 0.96,
+      "error_km": 0.31
+    },
+    {
+      "complaint_id": "CMP_2026018",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z13",
+      "predicted_confidence": 0.9516,
+      "top3_zones": [
+        "Z13",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z13",
+      "recoverability_score": 0.99,
+      "error_km": 0.23
+    },
+    {
+      "complaint_id": "CMP_2026019",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z09",
+      "predicted_confidence": 0.89,
+      "top3_zones": [
+        "Z09",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z09",
+      "recoverability_score": 0.95,
+      "error_km": 0.37
+    },
+    {
+      "complaint_id": "CMP_2026020",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z18",
+      "predicted_confidence": 0.9946,
+      "top3_zones": [
+        "Z18",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z18",
+      "recoverability_score": 0.97,
+      "error_km": 0.81
+    },
+    {
+      "complaint_id": "CMP_2026021",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z07",
+      "predicted_confidence": 0.9975,
+      "top3_zones": [
+        "Z07",
+        "Z08",
+        "Z01"
+      ],
+      "actual_zone": "Z07",
+      "recoverability_score": 0.97,
+      "error_km": 0.49
+    },
+    {
+      "complaint_id": "CMP_2026022",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z16",
+      "predicted_confidence": 0.9921,
+      "top3_zones": [
+        "Z16",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z16",
+      "recoverability_score": 0.99,
+      "error_km": 1.02
+    },
+    {
+      "complaint_id": "CMP_2026023",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z01",
+      "predicted_confidence": 0.3925,
+      "top3_zones": [
+        "Z01",
+        "Z11",
+        "Z14"
+      ],
+      "actual_zone": "Z11",
+      "recoverability_score": 0.99,
+      "error_km": 3729.11
+    },
+    {
+      "complaint_id": "CMP_2026024",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z14",
+      "predicted_confidence": 0.6897,
+      "top3_zones": [
+        "Z14",
+        "Z13",
+        "Z02"
+      ],
+      "actual_zone": "Z14",
+      "recoverability_score": 0.99,
+      "error_km": 0.26
+    },
+    {
+      "complaint_id": "CMP_2026025",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z13",
+      "predicted_confidence": 0.4861,
+      "top3_zones": [
+        "Z13",
+        "Z11",
+        "Z01"
+      ],
+      "actual_zone": "Z13",
+      "recoverability_score": 0.87,
+      "error_km": 0.84
+    },
+    {
+      "complaint_id": "CMP_2026026",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z20",
+      "predicted_confidence": 0.984,
+      "top3_zones": [
+        "Z20",
+        "Z12",
+        "Z01"
+      ],
+      "actual_zone": "Z20",
+      "recoverability_score": 0.98,
+      "error_km": 0.5
+    },
+    {
+      "complaint_id": "CMP_2026027",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z04",
+      "predicted_confidence": 0.9152,
+      "top3_zones": [
+        "Z04",
+        "Z18",
+        "Z01"
+      ],
+      "actual_zone": "Z04",
+      "recoverability_score": 0.97,
+      "error_km": 0.55
+    },
+    {
+      "complaint_id": "CMP_2026028",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z12",
+      "predicted_confidence": 0.9852,
+      "top3_zones": [
+        "Z12",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z12",
+      "recoverability_score": 0.96,
+      "error_km": 0.53
+    },
+    {
+      "complaint_id": "CMP_2026029",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z06",
+      "predicted_confidence": 0.974,
+      "top3_zones": [
+        "Z06",
+        "Z02",
+        "Z01"
+      ],
+      "actual_zone": "Z06",
+      "recoverability_score": 0.99,
+      "error_km": 0.27
+    },
+    {
+      "complaint_id": "CMP_2026030",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z10",
+      "predicted_confidence": 0.6042,
+      "top3_zones": [
+        "Z10",
+        "Z19",
+        "Z15"
+      ],
+      "actual_zone": "Z19",
+      "recoverability_score": 0.91,
+      "error_km": 8573.29
+    },
+    {
+      "complaint_id": "CMP_2026031",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z15",
+      "predicted_confidence": 0.6314,
+      "top3_zones": [
+        "Z15",
+        "Z02",
+        "Z01"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.91,
+      "error_km": 0.23
+    },
+    {
+      "complaint_id": "CMP_2026032",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z14",
+      "predicted_confidence": 0.9243,
+      "top3_zones": [
+        "Z14",
+        "Z20",
+        "Z01"
+      ],
+      "actual_zone": "Z14",
+      "recoverability_score": 0.93,
+      "error_km": 1.91
+    },
+    {
+      "complaint_id": "CMP_2026033",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z13",
+      "predicted_confidence": 0.8877,
+      "top3_zones": [
+        "Z13",
+        "Z16",
+        "Z19"
+      ],
+      "actual_zone": "Z13",
+      "recoverability_score": 0.99,
+      "error_km": 1.46
+    },
+    {
+      "complaint_id": "CMP_2026034",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z02",
+      "predicted_confidence": 0.8338,
+      "top3_zones": [
+        "Z02",
+        "Z06",
+        "Z01"
+      ],
+      "actual_zone": "Z02",
+      "recoverability_score": 0.98,
+      "error_km": 0.63
+    },
+    {
+      "complaint_id": "CMP_2026035",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z20",
+      "predicted_confidence": 0.992,
+      "top3_zones": [
+        "Z20",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z20",
+      "recoverability_score": 0.98,
+      "error_km": 1.87
+    },
+    {
+      "complaint_id": "CMP_2026036",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z02",
+      "predicted_confidence": 0.9327,
+      "top3_zones": [
+        "Z02",
+        "Z04",
+        "Z01"
+      ],
+      "actual_zone": "Z02",
+      "recoverability_score": 0.96,
+      "error_km": 0.63
+    },
+    {
+      "complaint_id": "CMP_2026037",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z05",
+      "predicted_confidence": 0.9732,
+      "top3_zones": [
+        "Z05",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z05",
+      "recoverability_score": 0.97,
+      "error_km": 1.33
+    },
+    {
+      "complaint_id": "CMP_2026038",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z15",
+      "predicted_confidence": 0.7783,
+      "top3_zones": [
+        "Z15",
+        "Z12",
+        "Z01"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.97,
+      "error_km": 1.18
+    },
+    {
+      "complaint_id": "CMP_2026039",
+      "typology": "Fake Loan App",
+      "predicted_zone": "Z03",
+      "predicted_confidence": 0.9101,
+      "top3_zones": [
+        "Z03",
+        "Z11",
+        "Z01"
+      ],
+      "actual_zone": "Z03",
+      "recoverability_score": 0.95,
+      "error_km": 1.51
+    },
+    {
+      "complaint_id": "CMP_2026040",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z18",
+      "predicted_confidence": 0.3997,
+      "top3_zones": [
+        "Z18",
+        "Z09",
+        "Z01"
+      ],
+      "actual_zone": "Z09",
+      "recoverability_score": 0.91,
+      "error_km": 15743.02
+    },
+    {
+      "complaint_id": "CMP_2026041",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z11",
+      "predicted_confidence": 0.9856,
+      "top3_zones": [
+        "Z11",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z11",
+      "recoverability_score": 0.98,
+      "error_km": 0.41
+    },
+    {
+      "complaint_id": "CMP_2026042",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z05",
+      "predicted_confidence": 0.4811,
+      "top3_zones": [
+        "Z05",
+        "Z15",
+        "Z01"
+      ],
+      "actual_zone": "Z05",
+      "recoverability_score": 0.97,
+      "error_km": 1.72
+    },
+    {
+      "complaint_id": "CMP_2026043",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z19",
+      "predicted_confidence": 0.4084,
+      "top3_zones": [
+        "Z19",
+        "Z13",
+        "Z18"
+      ],
+      "actual_zone": "Z18",
+      "recoverability_score": 0.89,
+      "error_km": 4307.24
+    },
+    {
+      "complaint_id": "CMP_2026044",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z05",
+      "predicted_confidence": 0.5075,
+      "top3_zones": [
+        "Z05",
+        "Z11",
+        "Z01"
+      ],
+      "actual_zone": "Z05",
+      "recoverability_score": 0.99,
+      "error_km": 1.34
+    },
+    {
+      "complaint_id": "CMP_2026045",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z12",
+      "predicted_confidence": 0.4528,
+      "top3_zones": [
+        "Z12",
+        "Z20",
+        "Z15"
+      ],
+      "actual_zone": "Z12",
+      "recoverability_score": 0.93,
+      "error_km": 0.26
+    },
+    {
+      "complaint_id": "CMP_2026046",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z18",
+      "predicted_confidence": 0.9164,
+      "top3_zones": [
+        "Z18",
+        "Z04",
+        "Z09"
+      ],
+      "actual_zone": "Z18",
+      "recoverability_score": 0.99,
+      "error_km": 0.95
+    },
+    {
+      "complaint_id": "CMP_2026047",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z08",
+      "predicted_confidence": 0.364,
+      "top3_zones": [
+        "Z08",
+        "Z07",
+        "Z03"
+      ],
+      "actual_zone": "Z03",
+      "recoverability_score": 0.93,
+      "error_km": 6387.98
+    },
+    {
+      "complaint_id": "CMP_2026048",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z19",
+      "predicted_confidence": 0.6476,
+      "top3_zones": [
+        "Z19",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z19",
+      "recoverability_score": 0.96,
+      "error_km": 0.52
+    },
+    {
+      "complaint_id": "CMP_2026049",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z11",
+      "predicted_confidence": 0.5809,
+      "top3_zones": [
+        "Z11",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z11",
+      "recoverability_score": 0.97,
+      "error_km": 0.41
+    },
+    {
+      "complaint_id": "CMP_2026050",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z09",
+      "predicted_confidence": 0.3538,
+      "top3_zones": [
+        "Z09",
+        "Z20",
+        "Z15"
+      ],
+      "actual_zone": "Z09",
+      "recoverability_score": 0.96,
+      "error_km": 0.83
+    },
+    {
+      "complaint_id": "CMP_2026051",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z19",
+      "predicted_confidence": 0.4084,
+      "top3_zones": [
+        "Z19",
+        "Z13",
+        "Z18"
+      ],
+      "actual_zone": "Z19",
+      "recoverability_score": 0.91,
+      "error_km": 0.25
+    },
+    {
+      "complaint_id": "CMP_2026052",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z17",
+      "predicted_confidence": 0.4264,
+      "top3_zones": [
+        "Z17",
+        "Z05",
+        "Z11"
+      ],
+      "actual_zone": "Z17",
+      "recoverability_score": 0.82,
+      "error_km": 1.06
+    },
+    {
+      "complaint_id": "CMP_2026053",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z19",
+      "predicted_confidence": 0.629,
+      "top3_zones": [
+        "Z19",
+        "Z15",
+        "Z01"
+      ],
+      "actual_zone": "Z19",
+      "recoverability_score": 0.92,
+      "error_km": 0.28
+    },
+    {
+      "complaint_id": "CMP_2026054",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z15",
+      "predicted_confidence": 0.6865,
+      "top3_zones": [
+        "Z15",
+        "Z14",
+        "Z01"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.99,
+      "error_km": 0.5
+    },
+    {
+      "complaint_id": "CMP_2026055",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z16",
+      "predicted_confidence": 0.4886,
+      "top3_zones": [
+        "Z16",
+        "Z13",
+        "Z01"
+      ],
+      "actual_zone": "Z16",
+      "recoverability_score": 0.88,
+      "error_km": 1.72
+    },
+    {
+      "complaint_id": "CMP_2026056",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z05",
+      "predicted_confidence": 0.4325,
+      "top3_zones": [
+        "Z05",
+        "Z03",
+        "Z01"
+      ],
+      "actual_zone": "Z05",
+      "recoverability_score": 0.9,
+      "error_km": 1.72
+    },
+    {
+      "complaint_id": "CMP_2026057",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z14",
+      "predicted_confidence": 0.7934,
+      "top3_zones": [
+        "Z14",
+        "Z08",
+        "Z09"
+      ],
+      "actual_zone": "Z14",
+      "recoverability_score": 0.99,
+      "error_km": 1.88
+    },
+    {
+      "complaint_id": "CMP_2026058",
+      "typology": "OTP Fraud",
+      "predicted_zone": "Z04",
+      "predicted_confidence": 0.4593,
+      "top3_zones": [
+        "Z04",
+        "Z15",
+        "Z01"
+      ],
+      "actual_zone": "Z15",
+      "recoverability_score": 0.97,
+      "error_km": 9212.79
+    },
+    {
+      "complaint_id": "CMP_2026059",
+      "typology": "Investment Scam",
+      "predicted_zone": "Z11",
+      "predicted_confidence": 0.7022,
+      "top3_zones": [
+        "Z11",
+        "Z17",
+        "Z05"
+      ],
+      "actual_zone": "Z11",
+      "recoverability_score": 0.99,
+      "error_km": 0.94
+    },
+    {
+      "complaint_id": "CMP_2026060",
+      "typology": "Part-Time Job Scam",
+      "predicted_zone": "Z03",
+      "predicted_confidence": 0.9819,
+      "top3_zones": [
+        "Z03",
+        "Z01",
+        "Z10"
+      ],
+      "actual_zone": "Z03",
+      "recoverability_score": 0.98,
+      "error_km": 1.04
+    }
+  ]
+}
