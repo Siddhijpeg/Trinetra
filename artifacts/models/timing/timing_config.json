@@ -1,0 +1,22 @@
+{
+  "bin_width_minutes": 30.0,
+  "max_minutes": 480.0,
+  "feature_cols": [
+    "hop_count",
+    "cumulative_amount",
+    "current_txn_amount",
+    "elapsed_since_first_txn",
+    "elapsed_since_prev_txn",
+    "prediction_hour",
+    "prediction_dayofweek",
+    "has_complaint",
+    "elapsed_since_incident",
+    "amount_retained_ratio"
+  ],
+  "prototype_status": "SYNTHETICALLY_VALIDATED_TIME_TO_EVENT_ENGINE",
+  "temporal_splits": {
+    "train": "Months 1-4",
+    "val": "Month 5",
+    "test": "Month 6 (touched once)"
+  }
+}

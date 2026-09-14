@@ -1,0 +1,7 @@
+typology_id,name,avg_amount
+TYP_01,OTP / KYC Fraud,25000
+TYP_02,Fake Loan App,15000
+TYP_03,Part-Time Job Scam,120000
+TYP_04,Investment / Crypto Scam,500000
+TYP_05,Sextortion,40000
+TYP_06,Marketplace / OLX Fraud,10000
