@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import { Card, FeatureTag } from '../components/ui';
 
 interface Message {
@@ -54,7 +53,7 @@ export default function AICopilot() {
         {
           id: (Date.now() + 1).toString(),
           sender: 'bot',
-          text: '❌ ERROR: VITE_GEMINI_API_KEY is missing in your .env file!',
+          text: '❌ ERROR: API key is missing in your environment configuration!',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -63,11 +62,12 @@ export default function AICopilot() {
     }
 
     try {
-      // Initialize Official Google Gen AI Client
+      // Dynamic import to keep backend key evaluation intact without exposing brand names in frontend logs
+      const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-2.5-flash',
         contents: `System Directive: You are TRINETRA AI Copilot, a high-level cybercrime intelligence assistant for police officers in India. Provide analytical, crisp, and forensic insights.\n\nUser Question: ${query}`
       });
 
@@ -78,22 +78,22 @@ export default function AICopilot() {
             id: (Date.now() + 1).toString(),
             sender: 'bot',
             text: response.text,
-            sources: [{ label: 'AI Copilot Engine', type: 'ai' }],
+            sources: [{ label: 'TRINETRA Prediction Engine', type: 'ai' }],
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }
         ]);
       } else {
-        throw new Error('No text returned from Gemini API.');
+        throw new Error('No intelligence output returned from TRINETRA Engine.');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error("Gemini API Error:", err);
+      console.error("TRINETRA AI Engine Error:", err);
       setMessages(prev => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           sender: 'bot',
-          text: `❌ AI Copilot Error: ${errorMessage}`,
+          text: `❌ TRINETRA AI Copilot Error: ${errorMessage}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -126,7 +126,7 @@ export default function AICopilot() {
         <span className="px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5"
           style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.3)' }}>
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Gemini SDK Engine
+          TRINETRA AI Engine
         </span>
       </div>
 
@@ -164,7 +164,7 @@ export default function AICopilot() {
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce"></span>
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.2s]"></span>
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.4s]"></span>
-              <span className="ml-1 font-semibold" style={{ color: 'var(--text-primary)' }}>Gemini SDK responding...</span>
+              <span className="ml-1 font-semibold" style={{ color: 'var(--text-primary)' }}>TRINETRA AI Copilot analyzing...</span>
             </div>
           )}
         </div>
@@ -185,7 +185,7 @@ export default function AICopilot() {
             <input type="text" value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask Gemini SDK..."
+              placeholder="Ask TRINETRA AI Copilot..."
               className="w-full pl-4 pr-12 py-3 rounded-xl text-sm outline-none border"
               style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--input-text)' }}
             />

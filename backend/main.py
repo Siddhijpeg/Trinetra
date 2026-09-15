@@ -224,6 +224,117 @@ def get_featured():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/v1/network-graph")
+def get_network_graph(
+    depth:      int          = Query(3,    ge=1, le=4, description="Traversal depth (1-3 or 4=SIM)"),
+    case_id:    Optional[str] = Query(None, description="Seed complaint/case ID"),
+    seed_account: Optional[str] = Query(None, description="Seed account ID for ego network"),
+):
+    """
+    Return a fraud transaction network graph for the given depth.
+
+    depth=1 → victim + immediate accounts
+    depth=2 → + mule layer
+    depth=3 → + ATM/UPI/cluster layer
+    depth=4 (SIM) → full simulated network with inferred edges
+
+    Response schema:
+      { nodes: [NodeData...], edges: [EdgeData...], meta: {...} }
+    """
+    import random, math
+
+    rng = random.Random(42 if not case_id else hash(case_id) % 10000)
+
+    def _node(nid, label, sub, ntype, x, y, depth_n, risk=None, persistent=False, flow="", complaints=1, last_active="Today, 13:54", institution=None):
+        return {
+            "id": nid, "label": label, "sub": sub, "type": ntype,
+            "x": x, "y": y, "depth": depth_n,
+            "risk": risk, "isPersistent": persistent,
+            "flow": flow, "complaints": complaints,
+            "lastActive": last_active,
+            "institution": institution or "",
+            "aiInsight": f"{label} ({sub}) shows {'elevated' if risk in ('HIGH','CRITICAL') else 'normal'} activity across {complaints} complaint{'s' if complaints > 1 else ''}. "
+                         + ("Registry-flagged entity with cross-case correlation." if persistent else "Transaction flow matches typology pattern.")
+        }
+
+    def _edge(frm, to, label="", highlight=False, dashed=False, predicted=False, inferred=False):
+        return {"from": frm, "to": to, "label": label,
+                "highlight": highlight, "dashed": dashed,
+                "predicted": predicted, "inferred": inferred}
+
+    # ── Build graph layers based on depth ──────────────────────────────────
+    nodes: list = []
+    edges: list = []
+
+    # Depth 1: Two victims + shared intermediary
+    nodes += [
+        _node("v1",    "Victim 1",    "XXXX1234",         "victim",  130, 200, 1, flow="₹4.8L", complaints=1, last_active="Today, 10:05"),
+        _node("v2",    "Victim 2",    "XXXX9871",         "victim",  130, 310, 1, flow="₹2.2L", complaints=1, last_active="Today, 09:45"),
+        _node("acct_a","Account A",   "XXXX7821 / HDFC",  "account", 270, 250, 1, flow="₹6.8L", complaints=3, last_active="Today, 11:07"),
+    ]
+    edges += [
+        _edge("v1", "acct_a", "₹4.8L", highlight=True),
+        _edge("v2", "acct_a", "₹2.2L", highlight=True),
+    ]
+
+    if depth >= 2:
+        nodes += [
+            _node("acct_b", "Account B",  "XXXX3294 / Paytm", "account", 390, 160, 2, flow="₹5.1L", complaints=2, last_active="Today, 11:11"),
+            _node("mule_b", "Mule B",     "XXXX5511",         "mule",    390, 340, 2, risk="HIGH",     persistent=True,  flow="₹3.8L", complaints=5,  last_active="Today, 11:14"),
+            _node("mule_c", "Mule Hub",   "XXXX9234 / SBI",   "mule",    520, 250, 2, risk="CRITICAL", persistent=True,  flow="₹8.9L", complaints=9,  last_active="Today, 11:18"),
+        ]
+        edges += [
+            _edge("acct_a", "acct_b", "₹5.1L", highlight=True),
+            _edge("acct_a", "mule_b", "₹1.7L", highlight=True),
+            _edge("acct_b", "mule_c", "₹4.9L", highlight=True),
+            _edge("mule_b", "mule_c", "₹3.2L", highlight=True),
+        ]
+
+    if depth >= 3:
+        nodes += [
+            _node("atm_gurgaon", "Gurugram ATM",   "Sector 29 Cluster",    "atm",     640, 130, 3, risk="HIGH",    flow="₹3.2L",  complaints=6,  last_active="Today, 11:23"),
+            _node("atm_delhi",   "Delhi ATM",      "CP Cluster",           "atm",     640, 240, 3, risk="CRITICAL",flow="₹5.7L",  complaints=11, last_active="Today, 11:25", institution="Axis Bank"),
+            _node("upi_1",       "UPI Handle 1",   "XXXX5432@upi",         "upi",     640, 350, 3, flow="₹0.8L",  complaints=2,  last_active="Today, 10:58"),
+            _node("cluster_1",   "Prior Cluster",  "7 matched complaints",  "cluster", 520, 390, 3, flow="₹12.4L", complaints=7,  last_active="2 days ago"),
+        ]
+        edges += [
+            _edge("mule_c", "atm_gurgaon", "PREDICTED", highlight=True, dashed=True, predicted=True),
+            _edge("mule_c", "atm_delhi",   "PREDICTED", highlight=True, dashed=True, predicted=True),
+            _edge("mule_b", "upi_1",        "₹0.8L",   highlight=False),
+            _edge("mule_c", "cluster_1",    "Matched",  highlight=False, dashed=True, inferred=True),
+        ]
+
+    if depth >= 4:  # SIM — extra inferred layer
+        nodes += [
+            _node("v3",          "Victim 3",      "XXXX4422",            "victim",  130,  90, 1, flow="₹1.1L", complaints=1, last_active="Yesterday, 22:31"),
+            _node("acct_c",      "Account C",     "XXXX6612 / ICICI",    "account", 270, 120, 2, flow="₹1.1L", complaints=2, last_active="Yesterday, 22:48"),
+            _node("upi_2",       "UPI Handle 2",  "XXXX9087@upi",        "upi",     390,  70, 2, flow="₹0.9L", complaints=1, last_active="Yesterday, 22:50"),
+            _node("atm_jaipur",  "Jaipur ATM",    "Malviya Nagar",       "atm",     640,  30, 3, risk="HIGH",  flow="₹2.0L", complaints=4, last_active="Yesterday, 23:15"),
+            _node("cluster_2",   "OOD Cluster",   "Cross-state pattern",  "cluster", 400, 430, 4, flow="₹3.5L", complaints=3, last_active="3 days ago"),
+        ]
+        edges += [
+            _edge("v3",     "acct_c",    "₹1.1L",   highlight=False),
+            _edge("acct_c", "upi_2",     "₹0.9L",   highlight=False),
+            _edge("upi_2",  "atm_jaipur","INFERRED", highlight=False, dashed=True, inferred=True),
+            _edge("acct_c", "mule_c",    "₹0.2L",   highlight=False, dashed=True, inferred=True),
+            _edge("cluster_1", "cluster_2", "Linked", highlight=False, dashed=True, inferred=True),
+        ]
+
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "meta": {
+            "depth": depth,
+            "case_id": case_id or "V2CMP_DEMO",
+            "total_nodes": len(nodes),
+            "total_edges": len(edges),
+            "persistent_entities": sum(1 for n in nodes if n["isPersistent"]),
+            "total_flow_inr": "₹8.9L",
+        }
+    }
+
+
+
 @app.get("/api/v1/meta/stats")
 def get_stats():
     """Dataset statistics."""
@@ -231,4 +342,3 @@ def get_stats():
         return repo.get_dataset_stats()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
